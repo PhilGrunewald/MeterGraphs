@@ -164,7 +164,6 @@ function scatterGraph(name){
       "y": d3.scale.linear().range([graph[name].dim.height, 0]) }
 
   graph[name].axis = {
-      // "x": d3.svg.axis().scale(graph.power.scale.h).tickFormat(dateFormat).orient("bottom"),
       "x": d3.svg.axis().scale(graph[name].scale.x).orient("top").tickSize(0),
       "y": d3.svg.axis().scale(graph[name].scale.y).ticks(10).orient('left') }
 
@@ -210,7 +209,6 @@ function scatterGraph(name){
         .attr('y', yMap )
         .attr("rx", 6)
         .attr("ry", 6)
-
       .on("mouseover", function(d) {
           tooltip.transition()
                .duration(200)
@@ -222,6 +220,10 @@ function scatterGraph(name){
           tooltip.transition()
                .duration(500)
                .style("opacity", 0) })
+      .on('click', function(d){
+          $('#timestamp').val(d.dt_period)
+          $('#modalActivity').modal('show') })
+
 // ######## Axes
 
   // Add the X axes
@@ -371,10 +373,12 @@ var lineGraph = function(name) {
                 .attr('x2', graph[name].scale.x(xValue[1])).attr('y2', y) })
         .on('click', function(){
             var mouse = d3.mouse(this);
-            var mouseDate = graph[name].scale.x.invert(mouse[0]);
-            var i = bisectDate(data.energy, mouseDate); // returns the index to the current data item
-            var d1 = data.energy[i];
-            alert('Please enter details for reading on '+ d1.timestamp) })
+            var mouseDate = graph[name].scale.x.invert(mouse[0])
+            var i = bisectDate(data.energy, mouseDate) // returns the index to the current data item
+            var d1 = data.energy[i]
+            // d1.timestamp) })
+            $('#timestamp').val(d1.timestamp)
+            $('#modalActivity').modal('show') })
 
 // ######## Average lines
 
@@ -530,6 +534,22 @@ function setDimensions(){
 
   return dim
 }
+
+
+// ****************************************
+//    To handle the Form submisiion
+// ****************************************
+
+$('body').on('click', '#submitActivity', function(){
+    // $('#formEditActivity').submit()
+    $('#modalActivity').modal('toggle')
+
+})
+
+
+// ****************************************
+//    Helpers
+// ****************************************
 
 function toolbox_label(d){
   var html = retHour(d.dt_period)
