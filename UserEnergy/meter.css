@@ -1,0 +1,141 @@
+svg {
+  font: 10px sans-serif;
+/*  background-color: #E7E0CB;*/
+}
+
+.area {
+  fill: #f8cbad;
+  clip-path: url(#clip);
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+#scatterGraph_activities > .axis line {
+  fill: none;
+  stroke: blue;
+  stroke-opacity="0.2"
+  shape-rendering: crispEdges;
+}
+
+
+.brush .extent {
+  stroke: #fff;
+  fill-opacity: .125;
+  shape-rendering: crispEdges;
+}
+
+#canvas {
+  margin-top: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f2f2f2;
+}
+
+#title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  font-family: Sans-Serif;
+  color: #a9a9a9;
+}
+
+#logo {
+  margin-left: 50px;
+  margin-top: 20px;
+}
+
+text {
+  font: 12px sans-serif;
+  pointer-events: none;
+  text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
+}
+
+.axis line,
+.axis path {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+
+div.tooltip {
+  top: -1000px;
+  position: absolute;
+  padding: 0 10px;
+  background: rgba(255, 255, 255, .90);
+/*  background: rgba(235, 219, 189, .80); */
+  border: 2px solid burlywood;
+  pointer-events: none;
+  opacity: 0;  
+}
+.tooltip-hidden{
+  opacity: 0;
+}
+
+/* FOR LINEGRAPH */
+.line {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 2px;
+}
+
+.circle {
+    fill: white;
+    stroke: steelblue;
+    stroke-width: 2px;
+}
+
+.area {
+    fill: steelblue;
+    stroke: none;
+    opacity: 0.1;
+}
+
+#areaGraph_brush path {
+    fill: steelblue;
+    stroke: none;
+    opacity: 0.4;
+}
+
+.zeroline {
+    fill: none;
+    stroke: red;
+    stroke-width: 0.5px;
+    stroke-dasharray: 5 5;
+}
+
+.zerolinetext {
+    fill: red;
+}
+.userLabel {
+    font-weight: 900;
+    font-size: 1.5em;
+    opacity: 0.7;
+}
+
+.overlay {
+    fill: none;
+    stroke: none;
+    pointer-events: all;
+}
+
+.focusLine {
+    fill: none;
+    stroke: steelblue;
+    stroke-width: 0.5px;
+}
+
+.focusCircle {
+    fill: red;
+}
+
+g.brush>.resize {
+    display: none;
+}
