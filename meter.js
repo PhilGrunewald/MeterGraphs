@@ -25,7 +25,7 @@ var tooltip = d3.select('body').append('div').attr("class", "tooltip")
 
 // ########  Read, Prepare the data, call graphs
 
-var apiurl = 'http://www.distributed-energy.de/graphdev/getHHdata.php?hh='+hhid
+var apiurl = 'http://www.energy-use.org/getHHdata.php?hh='+hhid
 d3.json(apiurl, function(error, json) {
   if (error){ console.log(error) }
 
