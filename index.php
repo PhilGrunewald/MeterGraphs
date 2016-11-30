@@ -15,12 +15,14 @@
   <?php
     $id='7936';
     if(isset($_GET['id'])){ $id = $_GET['id']; }
-    echo '<script>var hhid = "'.$id.'";</script>'
+    echo '<script>var hhid = "'.$id.'";</script>';
+	include('_nav_bar_yourdata.php');
   ?>
+<div class="container">
+ <div class="row">
+  <div class="col-xs-12 col-sm-10 col-sm-offset-1 col-md-8 col-md-offset-2" style="background-color: transparent;">
 
-  <img id="logo" src="meter_logo_trans.png" alt="METER" width="120">
-  <div id="title">Your use of electricity  (<?php echo $id; ?>)</div>
-
+  <h3>Your electricity profile</h3> 
   <div id="canvas"></div>
   <div class='tooltip'></div>
 
@@ -79,6 +81,8 @@
       </div>
     </div>
   </div>
-
+</div> 
+</div> 
+</div> 
 </body>
 </html>

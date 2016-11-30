@@ -11,8 +11,21 @@ svg {
 .axis path,
 .axis line {
   fill: none;
-  stroke: #000;
+  stroke: none;
   shape-rendering: crispEdges;
+}
+
+.x.axis path {
+	stroke: none;
+}
+.x.axis line {
+	stroke: none;
+}
+.y.axis path {
+	stroke: none;
+}
+.y.axis line {
+	stroke: none;
 }
 
 #scatterGraph_activities > .axis line {
@@ -30,25 +43,11 @@ svg {
 }
 
 #canvas {
-  margin-top: 50px;
-  display: flex;
+  display: inline-block;
+  margin-top: 10px;
   align-items: center;
   justify-content: center;
-  background-color: #f2f2f2;
-}
-
-#title {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 48px;
-  font-family: Sans-Serif;
-  color: #a9a9a9;
-}
-
-#logo {
-  margin-left: 50px;
-  margin-top: 20px;
+  background-color: #fff;
 }
 
 text {
@@ -57,12 +56,14 @@ text {
   text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
 }
 
+/*
 .axis line,
 .axis path {
   fill: none;
   stroke: #000;
   shape-rendering: crispEdges;
 }
+*/
 
 
 div.tooltip {
@@ -83,7 +84,7 @@ div.tooltip {
 .line {
   fill: none;
   stroke: steelblue;
-  stroke-width: 2px;
+  stroke-width: 1px;
 }
 
 .circle {
@@ -106,13 +107,13 @@ div.tooltip {
 
 .zeroline {
     fill: none;
-    stroke: red;
+    stroke: blue;
     stroke-width: 0.5px;
-    stroke-dasharray: 5 5;
 }
 
+
 .zerolinetext {
-    fill: red;
+    fill: #666;
 }
 .userLabel {
     font-weight: 900;

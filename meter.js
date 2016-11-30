@@ -25,7 +25,7 @@ var tooltip = d3.select('body').append('div').attr("class", "tooltip")
 
 // ########  Read, Prepare the data, call graphs
 
-var apiurl = 'http://www.energy-use.org/getHHdata.php?hh='+hhid
+var apiurl = '../getHHdata.php?hh='+hhid
 d3.json(apiurl, function(error, json) {
   if (error){ console.log(error) }
 
@@ -109,13 +109,13 @@ function areaGraph(name){
 // #######  Scales
 
   graph[name].scale = {
-      "colours": d3.scale.linear().range(['#B58929','#C61C6F', '#268BD2', '#85992C']),
+      "colours": d3.scale.linear().range(['#FFF','#CFC', '#268BD2', '#85992C']),
       "x": d3.time.scale().range([0, graph[name].dim.width]),
       "y": d3.scale.linear().range([graph[name].dim.height, 0]) }
 
   graph[name].axis = {
       "x": d3.svg.axis().scale(graph[name].scale.x).orient("bottom"),
-      "y": d3.svg.axis().scale(graph[name].scale.y).ticks(10).orient('left') }
+      "y": d3.svg.axis().scale(graph[name].scale.y).ticks(6).orient('left') }
 
 // ########  Domains
 
@@ -137,8 +137,12 @@ function areaGraph(name){
   // Add the X axes
   graph[name].append("g")
       .attr("class", "x axis")
-      .attr("transform", "translate(0," + graph[name].dim.height + ")")
-      .call(graph[name].axis.x);
+         .attr('transform', 'translate(0, ' + graph[name].dim.height/2 + ')')
+	 	.call(graph[name].axis.x.ticks(8))			// XXX BUG: the axis line shows in the fill color of the area !!?!
+	 	.selectAll("text")
+	 	.attr("transform", "rotate(-90)")
+	 	.style("font-size","20px")
+	 	.style("fill","#bbb");
 }
 
 function scatterGraph(name){
@@ -165,7 +169,7 @@ function scatterGraph(name){
 
   graph[name].axis = {
       "x": d3.svg.axis().scale(graph[name].scale.x).orient("top").tickSize(0),
-      "y": d3.svg.axis().scale(graph[name].scale.y).ticks(10).orient('left') }
+      "y": d3.svg.axis().scale(graph[name].scale.y).ticks(3).orient('left') }
 
 // ########  Domains
 
@@ -226,16 +230,10 @@ function scatterGraph(name){
 
 // ######## Axes
 
-  // Add the X axes
-  graph[name].append("g")
-      .attr("class", "x axis")
-      .attr("transform", "translate(0,20)")
-      .call(graph[name].axis.x);
-
   // Add the Y axes
 
   if(name != 'brushactivities'){
-    var yLine = 10
+    var yLine = 10						// height of User ID label
     _.each(data.users, function(user){
       yLine += 30
       graph[name].append('text')
@@ -295,17 +293,26 @@ var lineGraph = function(name) {
 
     graph[name].append('g')
         .attr('class', 'x axis')
-        .attr('transform', 'translate(0, ' + graph[name].dim.height + ')')
-        .call(graph[name].axis.x);
+        .attr('transform', 'translate(0, ' + graph[name].dim.height/2 + ')')
+		.call(graph[name].axis.x.ticks(3))
+		.selectAll("text")
+		.attr("transform", "rotate(-90)")
+		.style("font-size","40px")
+		.style("fill","#bbb");
 
     graph[name].append('g')
         .attr('class', 'y axis')
-        .call(graph[name].axis.y)
+		.call(graph[name].axis.y.ticks(0))
         .append('text')
             .attr('transform', 'rotate(-90)')
-            .attr('y', 6)
-            .attr('dy', '.71em')
+            .attr('y', -10)
+            .attr('x', -80)
+            .attr('dy', '0em')
+            .attr('dx', '0em')
             .attr('text-anchor', 'end')
+		.style("font-size","20px")
+		.style("fill","#bbb")
+			
             .text(data.meta.labels.y_axis);
 
     graph[name].append('path')
@@ -332,7 +339,7 @@ var lineGraph = function(name) {
         .attr('r', 4)
         .attr('class', 'circle focusCircle');
 
-// ######## Hnadle the area to bisect data
+// ######## Handle the area to bisect data
 
     var bisectDate = d3.bisector(function(d) { return d.timestamp }).left;
 
@@ -400,7 +407,7 @@ var lineGraph = function(name) {
               .attr('y', graph[name].scale.y(avgLine.lineValue))
               .attr('dy', '1em')
               .attr('text-anchor', 'end')
-              .text(avgLine.label)
+			  .text(avgLine.label + " (" + avgLine.lineValue + " Watt)")
             .attr('class', 'zerolinetext');
         }
     }
@@ -497,37 +504,40 @@ function setDimensions(){
 
   var height = {
     "activities": data.meta.users.length*30,
-    "energy": 400,
+    "energy": 150,
     "brushactivities": data.meta.users.length*8,
     "brush": 100 }
   var margin = {
     "left": 40,
     "right": 10 }
 
-  var canvasheight = height.activities + height.energy + height.brushactivities + height.brush + 80
+  var canvasheight = height.energy + height.activities /2 + height.brush
 
   dim = {
     "canvas": {
-      "width": 960,
+      "width": 650,
       "height": canvasheight },
+    "brushactivities": {
+      //top: height.activities + height.energy + 50,
+      top: 0,
+      bottom: canvasheight - (height.brush),
+      right: margin.right,
+      left: margin.left},
+    "brush": {
+      //top: height.activities + height.energy + 50 + height.brushactivities,
+      top: 0,
+      bottom: canvasheight - (height.brush),
+      right: margin.right,
+      left: margin.left},
     "activities": {
-      top: 10,
+      top: height.brush,
       bottom: canvasheight - (height.activities + 20 ),
       right: margin.right,
       left: margin.left},
     "energy": {
-      top: height.activities + 50,
-      bottom: canvasheight - (height.activities + 20 + height.energy),
-      right: margin.right,
-      left: margin.left},
-    "brushactivities": {
-      top: height.activities + height.energy + 50,
-      bottom: canvasheight - (height.activities + 20 + height.energy + height.brush),
-      right: margin.right,
-      left: margin.left},
-    "brush": {
-      top: height.activities + height.energy + 50 + height.brushactivities,
-      bottom: canvasheight - (height.activities + 20 + height.energy + height.brushactivities + height.brush),
+      top: height.activities / 2 + height.brush,
+      //bottom: canvasheight - (height.activities + 20 + height.energy),
+      bottom: 0,
       right: margin.right,
       left: margin.left}
     }
