@@ -76,12 +76,12 @@ text {
 
 .timelabelZoom {
 	transform: rotate(-90deg);
-	font-size: 20px;
+	font-size: 80px;
 	fill: #666;
 }
 .timelabel {
 	transform: rotate(-90deg);
-	font-size: 80px;
+	font-size: 20px;
 	fill: #666;
 }
 
