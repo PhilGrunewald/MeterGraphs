@@ -22,10 +22,17 @@ var canvas = d3.select('#canvas').append('svg')
 
 var tooltip = d3.select('body').append('div').attr("class", "tooltip")
 
+var height = {
+    "brush":    80,
+	"spacing":  60,
+    "energy":  200,
+	"activity": 20,
+	"activityZoom": 15
+	}
 
 // ########  Read, Prepare the data, call graphs
 
-var apiurl = '../getHHdata.php?hh='+hhid
+var apiurl = 'getHHdata.php?hh='+hhid
 d3.json(apiurl, function(error, json) {
   if (error){ console.log(error) }
 
@@ -115,12 +122,22 @@ function areaGraph(name){
 
   graph[name].axis = {
       "x": d3.svg.axis().scale(graph[name].scale.x).orient("bottom"),
-      "y": d3.svg.axis().scale(graph[name].scale.y).ticks(6).orient('left') }
+	  }
 
 // ########  Domains
 
   graph[name].scale.x.domain( d3.extent( data.timestamps ) )
   graph[name].scale.y.domain( [0, d3.max( data.watts )] )
+
+// ######## Axes
+
+  // Add the X axes
+  graph[name].append("g")
+      .attr("class", "x axis")
+         .attr('transform', 'translate(0, ' + graph[name].dim.height/2 + ')')
+	 	.call(graph[name].axis.x.ticks(10))			// XXX BUG: the axis line shows in the fill color of the area !!?!
+	 	.selectAll("text")
+		.attr('class', 'timelabelZoom');
 
 // ######## Graphs
 
@@ -132,17 +149,7 @@ function areaGraph(name){
         .y0(graph[name].dim.height)
         .y1(function(d) { return graph[name].scale.y(d.watt) }) )
 
-// ######## Axes
 
-  // Add the X axes
-  graph[name].append("g")
-      .attr("class", "x axis")
-         .attr('transform', 'translate(0, ' + graph[name].dim.height/2 + ')')
-	 	.call(graph[name].axis.x.ticks(8))			// XXX BUG: the axis line shows in the fill color of the area !!?!
-	 	.selectAll("text")
-	 	.attr("transform", "rotate(-90)")
-	 	.style("font-size","20px")
-	 	.style("fill","#bbb");
 }
 
 function scatterGraph(name){
@@ -163,25 +170,28 @@ function scatterGraph(name){
 // // #######  Scales
 
   graph[name].scale = {
-      "colours": d3.scale.linear().range(['#B58929','#C61C6F', '#268BD2', '#85992C']),
+      // "colours": d3.scale.linear().range(['#00f','#C61C6F', '#268BD2', '#85992C']),
       "x": d3.time.scale().range([0, graph[name].dim.width]),
       "y": d3.scale.linear().range([graph[name].dim.height, 0]) }
 
   graph[name].axis = {
       "x": d3.svg.axis().scale(graph[name].scale.x).orient("top").tickSize(0),
-      "y": d3.svg.axis().scale(graph[name].scale.y).ticks(3).orient('left') }
+      "y": d3.svg.axis().scale(graph[name].scale.y).orient('left') }
 
 // ########  Domains
 
   var xValue = d3.extent(data.energy, function(d) { return d.timestamp })
   graph[name].scale.x.domain( d3.extent( xValue ) )
 
+  // Width and height
   var xDtValue = function(d) { return data.timestamps.indexOf(d.dt_period)} // data -> value
   var xMap = function(d) { return graph[name].scale.x( d.dt_period ) } // data -> display
-  var yMap = function(d){return (data.meta.users.indexOf(d.idMeta) * ((name=='activities')?30:8) ) + 40 }
-  var wMap = graph[name].dim.width / ( (data.energy.length - 1) / 10 )
-  var hMap = (graph[name].dim.height - 40) / (data.meta.users.length + 1)
-  // var cValue = function(d) { return d.dotcolour}
+  // if on zoom scatter: space by 20px per user, in overview: 15px 
+  var yMap = function(d){return (data.meta.users.indexOf(d.idMeta) * ((name=='activities')?height.activity:height.activityZoom) ) }
+  // if in overview make blobs bigger (17 rather than 10 min)
+  var wMap = graph[name].dim.width / ( (data.energy.length - 1) / ((name=='activities')?10:17))
+  // if on zoom scatter: 20px high, in overview: 15px high
+  var hMap = function(d){return ((name=='activities')?height.activity:height.activityZoom)}
 
 // ######## Prepare data according to range
 
@@ -216,35 +226,39 @@ function scatterGraph(name){
       .on("mouseover", function(d) {
           tooltip.transition()
                .duration(200)
+               .style("visibility", "visible") 
                .style("opacity", .9);
           tooltip.html(toolbox_label(d))
                .style("left", (d3.event.pageX + 5) + "px")
                .style("top", (d3.event.pageY - 28) + "px") })
       .on("mouseout", function(d) {
           tooltip.transition()
-               .duration(500)
-               .style("opacity", 0) })
-      .on('click', function(d){
-          $('#timestamp').val(d.dt_period)
-          $('#modalActivity').modal('show') })
+               .duration(1500)
+               .style("opacity", 0)  
+			   .style("border", "none")
+	  		})
+      //.on('click', function(d){
+      //    $('#timestamp').val(d.dt_period)
+      //    $('#modalActivity').modal('show') })
 
 // ######## Axes
 
   // Add the Y axes
 
   if(name != 'brushactivities'){
-    var yLine = 10						// height of User ID label
+    var yLine = 0						// height of User ID label
     _.each(data.users, function(user){
-      yLine += 30
       graph[name].append('text')
           .attr('x', 0)
           .attr('y', yLine)
           .attr('dy', '1em')
-          .attr('text-anchor', 'end')
-          .text(user.idMeta)
+          .attr('text-anchor', 'start')
+          .text(user.label)
               .attr('fill', user.dotcolour)
               .attr('class', 'userLabel')
-  }) }
+      yLine += height.activity
+  		}) 
+	}
 }
 
 var lineGraph = function(name) {
@@ -288,31 +302,27 @@ var lineGraph = function(name) {
 
     graph[name].append('path')
         .datum(data.energy)
-        .attr('class', 'area')
+        .attr('class', 'area-energy')
         .attr('d', area);
 
     graph[name].append('g')
         .attr('class', 'x axis')
         .attr('transform', 'translate(0, ' + graph[name].dim.height/2 + ')')
-		.call(graph[name].axis.x.ticks(3))
+		.call(graph[name].axis.x
+			.ticks(3)
+			.tickFormat(d3.time.format('%_I %p'))
+			)
 		.selectAll("text")
-		.attr("transform", "rotate(-90)")
-		.style("font-size","40px")
-		.style("fill","#bbb");
+		.attr('class', 'timelabel')
 
     graph[name].append('g')
         .attr('class', 'y axis')
 		.call(graph[name].axis.y.ticks(0))
         .append('text')
-            .attr('transform', 'rotate(-90)')
-            .attr('y', -10)
-            .attr('x', -80)
-            .attr('dy', '0em')
-            .attr('dx', '0em')
-            .attr('text-anchor', 'end')
-		.style("font-size","20px")
-		.style("fill","#bbb")
-			
+            .attr('dy', '-0.5em')
+            .attr('dx', '-200')  // to match height.energy
+            .attr('text-anchor', 'start')
+			.attr('class', 'energy-y-label')
             .text(data.meta.labels.y_axis);
 
     graph[name].append('path')
@@ -378,14 +388,14 @@ var lineGraph = function(name) {
             focus.select('#focusLineY')
                 .attr('x1', graph[name].scale.x(xValue[0])).attr('y1', y)
                 .attr('x2', graph[name].scale.x(xValue[1])).attr('y2', y) })
-        .on('click', function(){
-            var mouse = d3.mouse(this);
-            var mouseDate = graph[name].scale.x.invert(mouse[0])
-            var i = bisectDate(data.energy, mouseDate) // returns the index to the current data item
-            var d1 = data.energy[i]
-            // d1.timestamp) })
-            $('#timestamp').val(d1.timestamp)
-            $('#modalActivity').modal('show') })
+        // .on('click', function(){
+        //     var mouse = d3.mouse(this);
+        //     var mouseDate = graph[name].scale.x.invert(mouse[0])
+        //     var i = bisectDate(data.energy, mouseDate) // returns the index to the current data item
+        //     var d1 = data.energy[i]
+        //     // d1.timestamp) })
+        //     $('#timestamp').val(d1.timestamp)
+        //     $('#modalActivity').modal('show') })
 
 // ######## Average lines
 
@@ -502,41 +512,34 @@ function brush(name){
 
 function setDimensions(){
 
-  var height = {
-    "activities": data.meta.users.length*30,
-    "energy": 150,
-    "brushactivities": data.meta.users.length*8,
-    "brush": 100 }
   var margin = {
     "left": 40,
-    "right": 10 }
+    "right": 10 
+    }
 
-  var canvasheight = height.energy + height.activities /2 + height.brush
+  var canvasheight = height.energy + height.spacing + height.brush
 
   dim = {
     "canvas": {
       "width": 650,
       "height": canvasheight },
     "brushactivities": {
-      //top: height.activities + height.energy + 50,
       top: 0,
-      bottom: canvasheight - (height.brush),
+      bottom: height.brush/2,
       right: margin.right,
       left: margin.left},
     "brush": {
-      //top: height.activities + height.energy + 50 + height.brushactivities,
       top: 0,
       bottom: canvasheight - (height.brush),
       right: margin.right,
       left: margin.left},
     "activities": {
-      top: height.brush,
-      bottom: canvasheight - (height.activities + 20 ),
+      top: height.brush + height.spacing,
+      bottom: 0,
       right: margin.right,
       left: margin.left},
     "energy": {
-      top: height.activities / 2 + height.brush,
-      //bottom: canvasheight - (height.activities + 20 + height.energy),
+      top: height.brush + height.spacing,
       bottom: 0,
       right: margin.right,
       left: margin.left}
@@ -550,11 +553,11 @@ function setDimensions(){
 //    To handle the Form submisiion
 // ****************************************
 
-$('body').on('click', '#submitActivity', function(){
-    // $('#formEditActivity').submit()
-    $('#modalActivity').modal('toggle')
-
-})
+// $('body').on('click', '#submitActivity', function(){
+//     // $('#formEditActivity').submit()
+//     $('#modalActivity').modal('toggle')
+// 
+// })
 
 
 // ****************************************
@@ -581,7 +584,7 @@ function retHour(date){
   var month = date.getMonth() // beware: January = 0; February = 1, etc.
   var day = date.getDate()
 
-  var daysOfWeek = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
+  var daysOfWeek = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
   var dayOfWeek = date.getDay() // Sunday = 0, Monday = 1, etc.
   var milliSeconds = date.getMilliseconds()
 

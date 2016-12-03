@@ -1,10 +1,19 @@
 svg {
   font: 10px sans-serif;
-/*  background-color: #E7E0CB;*/
+/*  background-color: #f00;*/
 }
 
 .area {
-  fill: #f8cbad;
+  fill: #393;
+  stroke: none;
+  opacity: 0.8;
+  clip-path: url(#clip);
+}
+
+.area-energy {
+  fill: #9c9;
+  stroke: none;
+  opacity: 0.8;
   clip-path: url(#clip);
 }
 
@@ -28,17 +37,19 @@ svg {
 	stroke: none;
 }
 
+/*
 #scatterGraph_activities > .axis line {
   fill: none;
-  stroke: blue;
   stroke-opacity="0.2"
   shape-rendering: crispEdges;
 }
+*/
 
 
 .brush .extent {
-  stroke: #fff;
-  fill-opacity: .125;
+  stroke: #090;
+  fill: #fff;
+  fill-opacity: .5;
   shape-rendering: crispEdges;
 }
 
@@ -52,57 +63,50 @@ svg {
 
 text {
   font: 12px sans-serif;
+  opacity: 0.4;
   pointer-events: none;
   text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
 }
 
-/*
-.axis line,
-.axis path {
-  fill: none;
-  stroke: #000;
-  shape-rendering: crispEdges;
+.energy-y-label {
+	font-size: 20px;
+	fill: #666;
+	transform: rotate(-90deg);
 }
-*/
 
+.timelabelZoom {
+	transform: rotate(-90deg);
+	font-size: 20px;
+	fill: #666;
+}
+.timelabel {
+	transform: rotate(-90deg);
+	font-size: 80px;
+	fill: #666;
+}
 
 div.tooltip {
-  top: -1000px;
   position: absolute;
+  visibility: hidden;
   padding: 0 10px;
-  background: rgba(255, 255, 255, .90);
-/*  background: rgba(235, 219, 189, .80); */
-  border: 2px solid burlywood;
+  background: rgba(105, 185, 105, .8);
+  border: 3px solid #6c6;
+  border-radius: 15px;
   pointer-events: none;
+  font-size: 130%;
+  color: #fff;
   opacity: 0;  
-}
-.tooltip-hidden{
-  opacity: 0;
 }
 
 /* FOR LINEGRAPH */
 .line {
   fill: none;
-  stroke: steelblue;
-  stroke-width: 1px;
 }
 
 .circle {
     fill: white;
     stroke: steelblue;
     stroke-width: 2px;
-}
-
-.area {
-    fill: steelblue;
-    stroke: none;
-    opacity: 0.1;
-}
-
-#areaGraph_brush path {
-    fill: steelblue;
-    stroke: none;
-    opacity: 0.4;
 }
 
 .zeroline {
@@ -134,7 +138,7 @@ div.tooltip {
 }
 
 .focusCircle {
-    fill: red;
+    fill: none;
 }
 
 g.brush>.resize {
