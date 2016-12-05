@@ -24,14 +24,12 @@ var canvas = d3.select('#canvas').append('svg')
 var tooltip = d3.select('body').append('div').attr("class", "tooltip")
 
 var height = {
-	"electricity":		 80,
-	"activity":			 10,
+	"electricity":		 80, // graph height
 	"spacing":  		 60,
-	"electricity_zoom":	200,
+	"electricity_zoom":	300,
+	"activity":			 10, // glyph height
 	"activityZoom":		 20
 	}
-
-// ########  Read, Prepare the data, call graphs
 
 var apiurl = 'getHHdata.php?hh='+hhid
 d3.json(apiurl, function(error, json) {
@@ -92,8 +90,8 @@ for (i = 0; i < readings.dt.length ; i++) {
 	// And create the graphs --- simple!!!
 	electricityGraph('electricity')
 	electricityGraph('electricity_zoom')
-	activityGraph('activities_zoom')
 	activityGraph('activities_all')
+	activityGraph('activities_zoom')
 	brush('electricity')
 	
 	// trigger the zoom window to draw to brush size
@@ -245,13 +243,13 @@ function activityGraph(name){
 function electricityGraph(name){
 	// Draws a filled area 
 	// Remove previous
-	d3.select('#electricityGraph_'+name).remove()
+	d3.select('#'+name).remove()
 	delete graph[name]
 
 	// #######  Dimensions
 
 	graph[name] = canvas.append('g')
-	.attr('id', 'electricityGraph_'+name)
+	.attr('id', name)
 	.attr('transform', 'translate('+ dim[name].left +', '+ dim[name].top +')')
 	graph[name].dim = { // add values to each graph-object for self-reference
 		  "width": dim.canvas.width - dim[name].left - dim[name].right,
@@ -280,6 +278,7 @@ function electricityGraph(name){
 		.attr('d', area);
 
 	if(name == 'electricity_zoom'){
+		// x Axis labels
 		graph[name].append('g')
 		.attr('class', 'x axis')
 		.attr('transform', 'translate(0, ' + graph[name].dim.height/2 + ')')
@@ -302,60 +301,58 @@ function electricityGraph(name){
 		.attr('class', 'timelabel')
 		}
 
-	graph[name].append('g')
-	.attr('class', 'y axis')
-	.call(graph[name].axis.y.ticks(0))
-	.append('text')
-	.attr('dy', '-0.5em')
-	.attr('dx', '-200')  // to match height.electricity_zoom
-	.attr('text-anchor', 'start')
-	.attr('class', 'energy-y-label')
-	.text(data.meta.labels.y_axis);
+	if(name == 'electricity_zoom'){
+		// y Axis label
+		graph[name].append('g')
+			.attr('class', 'y axis')
+			.call(graph[name].axis.y.ticks(0))
+			.append('text')
+			.attr('dy', '-0.5em')
+			.attr('dx', '-200')  // to match height.electricity_zoom
+			.attr('text-anchor', 'start')
+			.attr('class', 'energy-y-label')
+			.text(data.meta.labels.y_axis);
+	}
 
-	graph[name].append('path')
-	.datum(data.energy)
-	.attr('class', 'line')
-	.attr('d', line);
+	// graph[name].selectAll('circle').data(data).enter().append('circle')
+	// .attr('cx', function(d) { return graph[name].scale.x(d.timestamp) })
+	// .attr('cy', function(d) { return graph[name].scale.y(d.watt) })
+	// .attr('r', 1)
+	// .attr('class', 'circle');
 
-	graph[name].selectAll('circle').data(data).enter().append('circle')
-	.attr('cx', function(d) { return graph[name].scale.x(d.timestamp) })
-	.attr('cy', function(d) { return graph[name].scale.y(d.watt) })
-	.attr('r', 1)
-	.attr('class', 'circle');
+	// var focus = graph[name].append('g').style('display', 'none');
 
-	var focus = graph[name].append('g').style('display', 'none');
-
-	focus.append('line')
-	.attr('id', 'focusLineX')
-	.attr('class', 'focusLine');
-	focus.append('line')
-	.attr('id', 'focusLineY')
-	.attr('class', 'focusLine');
-	focus.append('circle')
-	.attr('id', 'focusCircle')
-	.attr('r', 4)
-	.attr('class', 'circle focusCircle');
+	// focus.append('line')
+	// .attr('id', 'focusLineX')
+	// .attr('class', 'focusLine');
+	// focus.append('line')
+	// .attr('id', 'focusLineY')
+	// .attr('class', 'focusLine');
+	// focus.append('circle')
+	// .attr('id', 'focusCircle')
+	// .attr('r', 4)
+	// .attr('class', 'circle focusCircle');
 
 	// ######## Handle the area to bisect data
 
-	var bisectDate = d3.bisector(function(d) { return d.timestamp }).left;
+	// var bisectDate = d3.bisector(function(d) { return d.timestamp }).left;
 
-	graph[name].append('rect')
-	.attr('class', 'overlay')
-	.attr('width', graph[name].dim.width)
-	.attr('height', graph[name].dim.height)
-	.on('mouseover', function(d) {
-		tooltip.transition()
-		.style('opacity', .9)
-		tooltip.html(d)
-		.style('left', (d3.event.pageX - 35) + 'px')
-		.style('top',  (d3.event.pageY - 30) + 'px')
-		focus.style('display', null) 
-		})
-	.on('mouseout', function(d) {
-		focus.style('display', 'none') 
-		})
-	.on('mousemove', function() {
+	// graph[name].append('rect')
+	// .attr('class', 'overlay')
+	// .attr('width', graph[name].dim.width)
+	// .attr('height', graph[name].dim.height)
+	// .on('mouseover', function(d) {
+	// 	tooltip.transition()
+	// 	.style('opacity', .9)
+	// 	tooltip.html(d)
+	// 	.style('left', (d3.event.pageX - 35) + 'px')
+	// 	.style('top',  (d3.event.pageY - 30) + 'px')
+	// 	focus.style('display', null) 
+	// 	})
+	// .on('mouseout', function(d) {
+	// 	focus.style('display', 'none') 
+	// 	})
+	// .on('mousemove', function() {
 	// 	var mouse = d3.mouse(this);
 	// 	var mouseDate = graph[name].scale.x.invert(mouse[0]);
 	// 	var i = bisectDate(data.energy, mouseDate); // returns the index to the current data item
@@ -373,7 +370,7 @@ function electricityGraph(name){
 	// 	focus.select('#focusLineY')
 	// 	.attr('x1', graph[name].scale.x(xValue[0])).attr('y1', y)
 	// 	.attr('x2', graph[name].scale.x(xValue[1])).attr('y2', y) 
-		})
+	//	})
 	// .on('click', function(){
 	//     var mouse = d3.mouse(this);
 	//     var mouseDate = graph[name].scale.x.invert(mouse[0])
@@ -382,29 +379,42 @@ function electricityGraph(name){
 	//     // d1.timestamp) })
 	//     $('#timestamp').val(d1.timestamp)
 	//     $('#modalActivity').modal('show') })
+	
 	// ######## Average lines
-	avgLine({ lineValue: data.meta.annotations.avg.Watt, label: data.meta.annotations.avg.label })
-	avgLine({ lineValue: data.meta.annotations.max.Watt, label: data.meta.annotations.max.label })
-	avgLine({ lineValue: data.meta.annotations.min.Watt, label: data.meta.annotations.min.label })
+	if(name == 'electricity_zoom'){
+		// Peak Mean and Min lines
+		valueLine({ lineValue: data.meta.annotations.avg.Watt, label: data.meta.annotations.avg.label })
+		valueLine({ lineValue: data.meta.annotations.max.Watt, label: data.meta.annotations.max.label })
+		valueLine({ lineValue: data.meta.annotations.min.Watt, label: data.meta.annotations.min.label })
+		valuePoint({ yPoint: data.meta.annotations.max.Watt, xPoint: d3.time.format("%Y-%m-%d %H:%M:%S").parse(data.meta.annotations.max.dt),  label: "Your peak demand"})
+		valuePoint({ yPoint: data.meta.annotations.min.Watt, xPoint: d3.time.format("%Y-%m-%d %H:%M:%S").parse(data.meta.annotations.min.dt),  label: "Your baseload demand"})
+	}
 
 	var xValue = d3.extent(data.energy, function(d) { return d.timestamp })
 
-	function avgLine(avgLine){
-		if(xValue[0]){ // Check if xValue[0] is NaN
-			graph[name].append('line')
+	function valueLine(value){
+		graph[name].append('line')
 			.attr('x1', graph[name].scale.x(xValue[0]))
-			.attr('y1', graph[name].scale.y(avgLine.lineValue))
+			.attr('y1', graph[name].scale.y(value.lineValue))
 			.attr('x2', graph[name].scale.x(xValue[1]))
-			.attr('y2', graph[name].scale.y(avgLine.lineValue))
-			.attr('class', 'zeroline');
-			graph[name].append('text')
+			.attr('y2', graph[name].scale.y(value.lineValue))
+			.attr('class', 'annotationline');
+		graph[name].append('text')
 			.attr('x', graph[name].scale.x(xValue[1]))
-			.attr('y', graph[name].scale.y(avgLine.lineValue))
+			.attr('y', graph[name].scale.y(value.lineValue))
 			.attr('dy', '1em')
 			.attr('text-anchor', 'end')
-			.text(avgLine.label + " (" + avgLine.lineValue + " Watt)")
-			.attr('class', 'zerolinetext');
-		}
+			.text(value.label + " (" + value.lineValue + " Watt)")
+			.attr('class', 'annotation');
+	}
+	function valuePoint(value){
+		graph[name].append('text')
+			.attr('x', graph[name].scale.x(value.xPoint))
+			.attr('y', graph[name].scale.y(value.yPoint))
+			.attr('dy', '-0.5em')
+			.attr('text-anchor', 'middle')
+			.text(value.label)
+			.attr('class', 'annotation-peak');
 	}
 	} // end electricityGraph
 
@@ -419,54 +429,22 @@ function brush(name){
 	graph[name].electricity.extent( recenter(data.meta.period.max) )
 	drawBrush()
 
-	function recenter(timestamp) {
-		console.log("Phil: " + timestamp);
-		// return 'from to' positions for brush to fit around the timestamp
-		var hhf = 180*60*1000 // three hours (180min)
-		var from = timestamp.getTime() - hhf 
-		var to = timestamp.getTime() + hhf
-
-		var end = data.meta.period.end.getTime()
-		var start = data.meta.period.start.getTime()
-
-		if(to > end){
-			var from = end - ( 2 * hhf )
-			var to = end }
-
-		if(from < start){
-			var from = start
-			var to = start + ( 2 * hhf ) }
-
-		from = new Date(from)
-		to = new Date(to)
-
-		return [from,to]
-		} // end recenter
-
-	function drawBrush(){
-		// remove old and display new
-		d3.selectAll("g.electricity").remove() // Remove previous brush
-		brushg = graph[name].append("g")
-		.attr("class", "brush")
-		.call(graph[name].electricity);
-
-		brushg.selectAll(".resize").append("path")
-		.attr("transform", "translate(0," +  graph[name].dim.height / 2 + ")")
-
-		brushg.selectAll("rect")
-		.attr("height", graph[name].dim.height);
-		} // drawBrush
-
 	function brushstart() {
 		// get current position of brush
+		graph[name].electricity.extent( recenter(graph[name].electricity.extent()[0]) ) 
 		graph[name].electricity.position = graph[name].electricity.extent()
 		}
 
 	function brushmove() {
 		// update the brush extent
-		if( graph[name].electricity.position[0] > graph[name].electricity.extent()[1] || graph[name].electricity.position[1] < graph[name].electricity.extent()[0] ) {
-			graph[name].electricity.extent( recenter(graph[name].electricity.extent()[0]) ) 
-			}
+		console.log("br move")
+		console.log( recenter(graph[name].electricity.extent()[0]) )
+// 		if( graph[name].electricity.position[0] > graph[name].electricity.extent()[1] || graph[name].electricity.position[1] < graph[name].electricity.extent()[0] ) {
+// 			graph[name].electricity.extent( recenter(graph[name].electricity.extent()[0]) ) 
+// 			}
+
+		graph[name].electricity.extent( recenter(graph[name].electricity.extent()[1]) ) 
+
 
 		var extent = graph[name].electricity.extent()
 		var readings = data.meta.period.readings
@@ -487,8 +465,39 @@ function brush(name){
 		} // brushmove
 
 	function brushend() {
-		// d3.selectAll("g.electricity").call(graph[name].electricity)
+		//d3.selectAll("g.electricity").call(graph[name].electricity)
 	}
+
+	function recenter(timestamp) {
+		// return 'from to' positions for brush to fit around the timestamp
+		var hhf = 180*60*1000 // three hours (180min)
+		var from = timestamp.getTime() - hhf 
+		var to = timestamp.getTime() + hhf
+
+		var end = data.meta.period.end.getTime()
+		var start = data.meta.period.start.getTime()
+
+		if(to > end)    { var from = end - ( 2 * hhf ) }
+		if(from < start){ var from = start }
+		var to = from + ( 2 * hhf ) 
+		from = new Date(from)
+		to = new Date(to)
+		return [from,to]
+		} // end recenter
+
+	function drawBrush(){
+		// remove old and display new
+		d3.selectAll("g.electricity").remove() // Remove previous brush
+		brushg = graph[name].append("g")
+		.attr("class", "brush")
+		.call(graph[name].electricity);
+
+		brushg.selectAll(".resize").append("path")
+		.attr("transform", "translate(0," +  graph[name].dim.height / 2 + ")")
+
+		brushg.selectAll("rect")
+		.attr("height", graph[name].dim.height);
+		} // drawBrush
 	} // end brush
 
 

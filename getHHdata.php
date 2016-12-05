@@ -21,7 +21,7 @@ $labels = array( 'Person 1','Person 2','3','4','5','6','7','8','9');
 
 //$householdID = 7929;
 $householdID = $_GET[hh];
-$sqlq = "SELECT idMeta FROM Meta WHERE Household_idHousehold = " . $householdID . " AND DataType = 'A'";
+$sqlq = "SELECT idMeta FROM Meta WHERE Household_idHousehold = '" . $householdID . "' AND DataType = 'A'";
         
 if (!mysqli_query($db,$sqlq))
   {
@@ -65,7 +65,7 @@ else
 
    $eLabels = array( 'data'=>'Electricity', 'x_axis'=>'Time', 'y_axis'=>'Demand [Watt]');
 
-   $sqlq = "SELECT idMeta FROM Meta WHERE Household_idHousehold = " . $householdID . " AND DataType = 'E'";
+   $sqlq = "SELECT idMeta FROM Meta WHERE Household_idHousehold = '" . $householdID . "' AND DataType = 'E'";
    $r_elec_readings =  mysqli_query($db,$sqlq);
 
    $elec_readings = array();

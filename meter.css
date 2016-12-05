@@ -1,40 +1,21 @@
 svg {
   font: 10px sans-serif;
+  cursor:ew-resize;
 /*  background-color: #f00;*/
 }
 
-.area {
+.area-energy {
   fill: #393;
   stroke: none;
   opacity: 0.8;
   clip-path: url(#clip);
 }
 
-.area-energy {
-  fill: #9c9;
-  stroke: none;
-  opacity: 0.8;
-  clip-path: url(#clip);
-}
-
-.axis path,
-.axis line {
+/* avoids coordinate axes to be drawn */
+.axis path {
   fill: none;
   stroke: none;
   shape-rendering: crispEdges;
-}
-
-.x.axis path {
-	stroke: none;
-}
-.x.axis line {
-	stroke: none;
-}
-.y.axis path {
-	stroke: none;
-}
-.y.axis line {
-	stroke: none;
 }
 
 /*
@@ -48,7 +29,7 @@ svg {
 
 .brush .extent {
   stroke: #090;
-  fill: #fff;
+  fill: #fc9;
   fill-opacity: .5;
   shape-rendering: crispEdges;
 }
@@ -109,15 +90,20 @@ div.tooltip {
     stroke-width: 2px;
 }
 
-.zeroline {
+.annotationline {
     fill: none;
-    stroke: blue;
-    stroke-width: 0.5px;
+    stroke: #9c9;
+    stroke-width: 2.5px;
 }
 
 
-.zerolinetext {
+.annotation {
+  	font-size: 120%;
     fill: #666;
+}
+.annotation-peak {
+  	font-size: 180%;
+    fill: #f33;
 }
 .userLabel {
     font-weight: 900;
