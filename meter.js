@@ -1,5 +1,7 @@
 // ########  Global variables
 
+console.log("hello!")
+
 var data = {
 	"json": {},           // pointer to received JSON
 	"meta": {             // pointer to metadata
@@ -284,20 +286,54 @@ function electricityGraph(name){
 		graph[name].append('g')
 		.attr('class', 'x axis')
 		.attr('transform', 'translate(0, ' + graph[name].dim.height/2 + ')')
+		//either: ============= SHORTER, BUT NO SUPERSCRIPT IN SVG ============= 
+		// .call(graph[name].axis.x
+		// 	.ticks(1)
+		// 	.tickFormat(function(d){
+		// 		var format = d3.time.format('%-I %p');
+		// 		var out = (format(d)).split(" ", 2);// (format(d)).split(" ", 2);
+		// 		var date = out[0] + " " + (out[1].toLowerCase());
+		// 		return date;})
+		// 	)
+		// .selectAll("text")
+		// .attr('class', 'timelabelZoom')
+		//or: ============= A BLUNT HACK ============= 
 		.call(graph[name].axis.x
-			.ticks(3)
-			.tickFormat(d3.time.format('%_I %p'))
-			)
-		.selectAll("text")
-		.attr('class', 'timelabelZoom')
-
+						.ticks(2)
+						.tickFormat(""))
+		var v = graph[name].selectAll('g')
+		var text_hour = v.selectAll("g")
+ 			.append("text")
+		 	.style("font-size", "80")
+		  	.style("fill","#666")
+		  	.style("text-anchor", "end")
+		 	.attr("x", -70)
+		 	.text(function(d){
+						var format = d3.time.format('%-I %p');
+						var out = (format(d)).split(" ", 2);
+						var date = out[0];
+						return date;})
+		var text_ampm = v.selectAll("g")
+		    .append("text")
+		 	.style("text-anchor", "end")
+		 	.style("font-size", "40")
+		 	.attr("fill","#666")
+		 	.attr("y", -33)
+		 	.text(function(d){
+						var format = d3.time.format('%-I %p');
+						var out = (format(d)).split(" ", 2);
+						var date = out[1].toLowerCase();
+						return date;})
+		text_hour.attr("transform", "translate(0,-80), rotate(-90)")
+		text_ampm.attr("transform", "translate(0,-80), rotate(-90)")
+		//=============================================
 		} else {
 		// full range with more ticks and standard date format
 		graph[name].append('g')
 		.attr('class', 'x axis')
 		.attr('transform', 'translate(0, ' + graph[name].dim.height/2 + ')')
 		.call(graph[name].axis.x
-			.ticks(8)
+			.ticks(4)
 			)
 		.selectAll("text")
 		.attr('class', 'timelabel')
