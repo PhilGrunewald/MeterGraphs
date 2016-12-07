@@ -26,7 +26,7 @@ var tooltip = d3.select('body').append('div').attr("class", "tooltip")
 var height = {
 	"electricity":		 80, // graph height
 	"spacing":  		 60,
-	"electricity_zoom":	300,
+	"electricity_zoom":	200,
 	"activity":			 10, // glyph height
 	"activityZoom":		 20
 	}
@@ -419,9 +419,9 @@ function electricityGraph(name){
 		// Peak Mean and Min lines
 		valueLine({ lineValue: data.meta.annotations.avg.Watt, label: data.meta.annotations.avg.label })
 		valueLine({ lineValue: data.meta.annotations.max.Watt, label: data.meta.annotations.max.label })
-		valueLine({ lineValue: data.meta.annotations.min.Watt, label: data.meta.annotations.min.label })
-		valuePoint({ yPoint: data.meta.annotations.max.Watt, xPoint: d3.time.format("%Y-%m-%d %H:%M:%S").parse(data.meta.annotations.max.dt),  label: "Your peak demand"})
-		valuePoint({ yPoint: data.meta.annotations.min.Watt, xPoint: d3.time.format("%Y-%m-%d %H:%M:%S").parse(data.meta.annotations.min.dt),  label: "Your baseload demand"})
+		// valueLine({ lineValue: data.meta.annotations.min.Watt, label: data.meta.annotations.min.label })
+		valuePoint({ yPoint: data.meta.annotations.max.Watt, xPoint: d3.time.format("%Y-%m-%d %H:%M:%S").parse(data.meta.annotations.max.dt),  label: "Your peak use ("+data.meta.annotations.max.Watt+"W)"})
+		valuePoint({ yPoint: data.meta.annotations.min.Watt, xPoint: d3.time.format("%Y-%m-%d %H:%M:%S").parse(data.meta.annotations.min.dt),  label: "Your lowest use ("+ data.meta.annotations.min.Watt+"W)"})
 	}
 
 	var xValue = d3.extent(data.energy, function(d) { return d.timestamp })
