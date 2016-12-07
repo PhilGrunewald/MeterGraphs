@@ -45,9 +45,14 @@ svg {
 }
 */
 
-
 .brush .extent {
   stroke: #090;
+  fill: #fff;
+  fill-opacity: 0;
+  shape-rendering: crispEdges;
+}
+
+.brush_opaque {
   fill: #fff;
   fill-opacity: .5;
   shape-rendering: crispEdges;

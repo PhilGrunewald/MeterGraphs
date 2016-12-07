@@ -273,7 +273,7 @@ function electricityGraph(name){
 	.x(function(d) { return graph[name].scale.x(d.timestamp); })
 	.y(function(d) { return graph[name].scale.y(d.watt); });
 
-	var area = d3.svg.area()
+	area = d3.svg.area()
 		.x(function(d) { return graph[name].scale.x(d.timestamp) })
 		.y0(function(d) { return graph[name].scale.y(d.watt) })
 		.y1(graph[name].dim.height);
@@ -285,6 +285,7 @@ function electricityGraph(name){
 	if(name == 'electricity_zoom'){
 		graph[name].append('g')
 		.attr('class', 'x axis')
+		.attr('id', 'x_axis_el_zoom')
 		.attr('transform', 'translate(0, ' + graph[name].dim.height/2 + ')')
 		//either: ============= SHORTER, BUT NO SUPERSCRIPT IN SVG ============= 
 		// .call(graph[name].axis.x
@@ -445,8 +446,9 @@ function electricityGraph(name){
 	}
 	} // end electricityGraph
 
+
 function brush(name){
-	// Draw the zooming brush
+	//Draw the zooming brush
 	graph[name].electricity = d3.svg.brush()
 	.x(graph[name].scale.x)
 	.on("brushstart", brushstart)  // on mousedown
@@ -455,6 +457,7 @@ function brush(name){
 
 	graph[name].electricity.extent( recenter(data.meta.period.max) )
 	drawBrush()
+	drawBrushOpaque()
 
 	function recenter(timestamp) {
 		console.log("Phil: " + timestamp);
@@ -480,7 +483,31 @@ function brush(name){
 		return [from,to]
 		} // end recenter
 
+
+	function drawBrushOpaque() {
+		graph.activities_all.selectAll(".brush_opaque").remove();
+		//graph[name].selectAll('.zerolinetext').remove(); - to do: REMOVE ANNOTATION TEXTS AND DRAW THEM OVER THE OPACITY
+		graph.activities_all.selectAll(".rect")
+								  .data([
+								  	graph[name].electricity.extent()[0],
+								  	graph[name].electricity.extent()[1],
+								  	])
+								  .enter()
+								  .append("rect")
+								  .attr("class", "brush_opaque")
+								  .attr("x", function(d, i) {
+								   return (i == 0) ? graph.electricity.scale.x.range()[0] : graph.electricity.scale.x(d)
+									})
+								  .attr("y", 0)
+                                  .attr("width", function(d, i) {
+                                  	return (i == 0) ? (graph.electricity.scale.x(d) - graph.electricity.scale.x.range()[0]) : 
+                                  	(graph.electricity.scale.x.range()[1] - graph.electricity.scale.x(d))
+                                  })
+                                  .attr("height",graph[name].dim.height)
+	}
+	
 	function drawBrush(){
+		drawBrushOpaque();
 		// remove old and display new
 		d3.selectAll("g.electricity").remove() // Remove previous brush
 		brushg = graph[name].append("g")
@@ -500,6 +527,7 @@ function brush(name){
 		}
 
 	function brushmove() {
+		drawBrushOpaque();
 		// update the brush extent
 		if( graph[name].electricity.position[0] > graph[name].electricity.extent()[1] || graph[name].electricity.position[1] < graph[name].electricity.extent()[0] ) {
 			graph[name].electricity.extent( recenter(graph[name].electricity.extent()[0]) ) 
@@ -526,6 +554,9 @@ function brush(name){
 	function brushend() {
 		// d3.selectAll("g.electricity").call(graph[name].electricity)
 	}
+
+
+
 	} // end brush
 
 
