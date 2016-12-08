@@ -285,8 +285,12 @@ function electricityGraph(name){
 	if(name == 'electricity_zoom'){
 		graph[name].append('g')
 		.attr('class', 'x axis')
+<<<<<<< HEAD
 		.attr('id', 'x_axis_el_zoom')
 		.attr('transform', 'translate(0, ' + graph[name].dim.height/2 + ')')
+=======
+		.attr('transform', 'translate(0, ' + (graph[name].dim.height-10) + ')')
+>>>>>>> c5feac9b409027b5d4d2a6b384cdf92ada32867c
 		//either: ============= SHORTER, BUT NO SUPERSCRIPT IN SVG ============= 
 		// .call(graph[name].axis.x
 		// 	.ticks(1)
@@ -308,7 +312,7 @@ function electricityGraph(name){
 		 	.style("font-size", "80")
 		  	.style("fill","#666")
 		  	.style("text-anchor", "end")
-		 	.attr("x", -70)
+		 	// .attr("x", -70)
 		 	.text(function(d){
 						var format = d3.time.format('%-I %p');
 						var out = (format(d)).split(" ", 2);
@@ -317,16 +321,21 @@ function electricityGraph(name){
 		var text_ampm = v.selectAll("g")
 		    .append("text")
 		 	.style("text-anchor", "end")
-		 	.style("font-size", "40")
+		 	.style("font-size", "20")
 		 	.attr("fill","#666")
-		 	.attr("y", -33)
+		 	//.attr("y", 0)
 		 	.text(function(d){
 						var format = d3.time.format('%-I %p');
 						var out = (format(d)).split(" ", 2);
 						var date = out[1].toLowerCase();
 						return date;})
+<<<<<<< HEAD
 		text_hour.attr("transform", "translate(55,-70), rotate(-90)")
 		text_ampm.attr("transform", "translate(55,-70), rotate(-90)")
+=======
+		//text_hour.attr("transform", "translate(0,0), rotate(-0)")
+		text_ampm.attr("transform", "translate(25,0)")
+>>>>>>> c5feac9b409027b5d4d2a6b384cdf92ada32867c
 		//=============================================
 		} else {
 		// full range with more ticks and standard date format
