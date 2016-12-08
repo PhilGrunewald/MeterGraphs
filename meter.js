@@ -554,15 +554,18 @@ function brush(name){
 
 
 	function drawBrushOpaque() {
-		graph.activities_all.selectAll(".brush_opaque").remove();
+		graph.activities_all.selectAll(".brush_opaque_g").remove();
 		//graph[name].selectAll('.zerolinetext').remove(); - to do: REMOVE ANNOTATION TEXTS AND DRAW THEM OVER THE OPACITY
-		graph.activities_all.selectAll(".rect")
+		var brush_opaque = graph.activities_all.selectAll(".rect")
 								  .data([
 								  	graph[name].electricity.extent()[0],
 								  	graph[name].electricity.extent()[1],
 								  	])
 								  .enter()
-								  .append("rect")
+								  .append("g")
+								  .attr("class", "brush_opaque_g")
+
+								  brush_opaque.append("rect")
 								  .attr("class", "brush_opaque")
 								  .attr("x", function(d, i) {
 								   return (i == 0) ? graph.electricity.scale.x.range()[0] : graph.electricity.scale.x(d)
@@ -573,6 +576,13 @@ function brush(name){
                                   	(graph.electricity.scale.x.range()[1] - graph.electricity.scale.x(d))
                                   })
                                   .attr("height",graph[name].dim.height)
+
+                                  brush_opaque.append("line")
+                                  .attr("class", "brush_opaque_lines")
+                                  .attr("x1", function(d) { return graph.electricity.scale.x(d) })
+								  .attr("y1", function(d) { return graph.electricity.scale.y.range()[0] })
+								  .attr('x2', function(d, i) { return (i == 0) ? graph.electricity_zoom.scale.x.range()[0] : graph.electricity_zoom.scale.x.range()[1] })
+								  .attr("y2", function(d) { return dim.electricity_zoom.top })
 	}
 
 	function drawBrush(){

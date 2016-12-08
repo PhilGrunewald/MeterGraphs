@@ -58,6 +58,12 @@ svg {
   shape-rendering: crispEdges;
 }
 
+.brush_opaque_lines {
+  stroke-width: 1;
+  stroke: grey;
+  shape-rendering: geometricPrecision;
+}
+
 #canvas {
   display: inline-block;
   margin-top: 10px;
