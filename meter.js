@@ -325,19 +325,92 @@ function electricityGraph(name){
 						var out = (format(d)).split(" ", 2);
 						var date = out[1].toLowerCase();
 						return date;})
-		text_hour.attr("transform", "translate(0,-80), rotate(-90)")
-		text_ampm.attr("transform", "translate(0,-80), rotate(-90)")
+		text_hour.attr("transform", "translate(55,-70), rotate(-90)")
+		text_ampm.attr("transform", "translate(55,-70), rotate(-90)")
 		//=============================================
 		} else {
 		// full range with more ticks and standard date format
 		graph[name].append('g')
 		.attr('class', 'x axis')
 		.attr('transform', 'translate(0, ' + graph[name].dim.height/2 + ')')
+		//either 
+		// .call(graph[name].axis.x
+		// 	.ticks(4)
+		// 	)
+		// .selectAll("text")
+		// .attr('class', 'timelabel')
 		.call(graph[name].axis.x
-			.ticks(4)
-			)
-		.selectAll("text")
-		.attr('class', 'timelabel')
+						.ticks(4)
+						.tickFormat(""))
+		// var temp = function(d) {
+		// 	var format = d3.time.format('%-I %p');
+		// 	if (format(d) == "12 AM") {
+		// 		this.date = "Midnight";
+		// 		this.x = -30;
+		// 		this.fontsize = 19;
+		// 	} else {
+		// 		var out = (format(d)).split(" ", 2);
+		// 		this.date = out[0];
+		// 		this.x = -70;
+		// 		this.fontsize = 30;
+		// 	}
+		// }
+
+		var v = graph[name].selectAll('g')
+		var text_hour = v.selectAll("g")
+ 			.append("text")
+		 	.style("font-size", function(d) {
+		 		var format = d3.time.format('%-I %p');
+						var out = (format(d)).split(" ", 2);
+						var date = out[1].toLowerCase();
+						if (format(d) == "12 AM") {
+							return 19;
+						}
+						else {
+							return 30;
+						}		 		
+		 	})
+		  	.style("fill","#666")
+		  	.style("text-anchor", "end")
+		 	.attr("y", 0)
+		 	.attr("x", function(d){
+		 		var format = d3.time.format('%-I %p');
+						var out = (format(d)).split(" ", 2);
+						var date = out[1].toLowerCase();
+						if (format(d) == "12 AM") {
+							return -30;
+						}
+						else {
+							return -70;
+						}
+		 	})
+		 	.text(function(d){
+						var format = d3.time.format('%-I %p');
+						var out = (format(d)).split(" ", 2);
+						var date = out[0];
+						if (format(d) == "12 AM") {
+							date = "Midnight"
+						}
+						return date;})
+
+		
+
+		var text_ampm = v.selectAll("g")
+		    .append("text")
+		 	.style("text-anchor", "end")
+		 	.style("font-size", "25")
+		 	.attr("fill","#666")
+		 	.attr("y", 0)
+		 	.text(function(d){
+						var format = d3.time.format('%-I %p');
+						var out = (format(d)).split(" ", 2);
+						var date = out[1].toLowerCase();
+						if (format(d) == "12 AM") {
+							date = "";
+						}
+						return date;})
+		text_hour.attr("transform", "translate(20,-64), rotate(-90)")
+		text_ampm.attr("transform", "translate(16,-34), rotate(-90)")
 		}
 
 	graph[name].append('g')
@@ -505,7 +578,7 @@ function brush(name){
                                   })
                                   .attr("height",graph[name].dim.height)
 	}
-	
+
 	function drawBrush(){
 		drawBrushOpaque();
 		// remove old and display new
