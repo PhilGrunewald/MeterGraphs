@@ -1,5 +1,7 @@
 // ########  Global variables
 
+console.log("hello!")
+
 var data = {
 	"json": {},           // pointer to received JSON
 	"meta": {             // pointer to metadata
@@ -30,6 +32,9 @@ var height = {
 	"activity":			 10, // glyph height
 	"activityZoom":		 20
 	}
+
+// ########  Read, Prepare the data, call graphs
+//marina's version
 
 var apiurl = 'getHHdata.php?hh='+hhid
 d3.json(apiurl, function(error, json) {
@@ -268,7 +273,7 @@ function electricityGraph(name){
 	.x(function(d) { return graph[name].scale.x(d.timestamp); })
 	.y(function(d) { return graph[name].scale.y(d.watt); });
 
-	var area = d3.svg.area()
+	area = d3.svg.area()
 		.x(function(d) { return graph[name].scale.x(d.timestamp) })
 		.y0(function(d) { return graph[name].scale.y(d.watt) })
 		.y1(graph[name].dim.height);
@@ -303,7 +308,6 @@ function electricityGraph(name){
 		 	.style("font-size", "80")
 		  	.style("fill","#666")
 		  	.style("text-anchor", "end")
-		 	// .attr("x", -70)
 		 	.text(function(d){
 						var format = d3.time.format('%-I %p');
 						var out = (format(d)).split(" ", 2);
@@ -314,13 +318,11 @@ function electricityGraph(name){
 		 	.style("text-anchor", "end")
 		 	.style("font-size", "20")
 		 	.attr("fill","#666")
-		 	//.attr("y", 0)
 		 	.text(function(d){
 						var format = d3.time.format('%-I %p');
 						var out = (format(d)).split(" ", 2);
 						var date = out[1].toLowerCase();
 						return date;})
-		//text_hour.attr("transform", "translate(0,0), rotate(-0)")
 		text_ampm.attr("transform", "translate(25,0)")
 		//=============================================
 		} else {
@@ -328,11 +330,84 @@ function electricityGraph(name){
 		graph[name].append('g')
 		.attr('class', 'x axis')
 		.attr('transform', 'translate(0, ' + graph[name].dim.height/2 + ')')
+		//either 
+		// .call(graph[name].axis.x
+		// 	.ticks(4)
+		// 	)
+		// .selectAll("text")
+		// .attr('class', 'timelabel')
 		.call(graph[name].axis.x
-			.ticks(4)
-			)
-		.selectAll("text")
-		.attr('class', 'timelabel')
+						.ticks(4)
+						.tickFormat(""))
+		// var temp = function(d) {
+		// 	var format = d3.time.format('%-I %p');
+		// 	if (format(d) == "12 AM") {
+		// 		this.date = "Midnight";
+		// 		this.x = -30;
+		// 		this.fontsize = 19;
+		// 	} else {
+		// 		var out = (format(d)).split(" ", 2);
+		// 		this.date = out[0];
+		// 		this.x = -70;
+		// 		this.fontsize = 30;
+		// 	}
+		// }
+
+		var v = graph[name].selectAll('g')
+		var text_hour = v.selectAll("g")
+ 			.append("text")
+		 	.style("font-size", function(d) {
+		 		var format = d3.time.format('%-I %p');
+						var out = (format(d)).split(" ", 2);
+						var date = out[1].toLowerCase();
+						if (format(d) == "12 AM") {
+							return 19;
+						}
+						else {
+							return 30;
+						}		 		
+		 	})
+		  	.style("fill","#666")
+		  	.style("text-anchor", "end")
+		 	.attr("y", 0)
+		 	.attr("x", function(d){
+		 		var format = d3.time.format('%-I %p');
+						var out = (format(d)).split(" ", 2);
+						var date = out[1].toLowerCase();
+						if (format(d) == "12 AM") {
+							return -30;
+						}
+						else {
+							return -70;
+						}
+		 	})
+		 	.text(function(d){
+						var format = d3.time.format('%-I %p');
+						var out = (format(d)).split(" ", 2);
+						var date = out[0];
+						if (format(d) == "12 AM") {
+							date = "Midnight"
+						}
+						return date;})
+
+		
+
+		var text_ampm = v.selectAll("g")
+		    .append("text")
+		 	.style("text-anchor", "end")
+		 	.style("font-size", "25")
+		 	.attr("fill","#666")
+		 	.attr("y", 0)
+		 	.text(function(d){
+						var format = d3.time.format('%-I %p');
+						var out = (format(d)).split(" ", 2);
+						var date = out[1].toLowerCase();
+						if (format(d) == "12 AM") {
+							date = "";
+						}
+						return date;})
+		text_hour.attr("transform", "translate(20,-64), rotate(-90)")
+		text_ampm.attr("transform", "translate(16,-34), rotate(-90)")
 		}
 
 	if(name == 'electricity_zoom'){
@@ -452,8 +527,9 @@ function electricityGraph(name){
 	}
 	} // end electricityGraph
 
+
 function brush(name){
-	// Draw the zooming brush
+	//Draw the zooming brush
 	graph[name].electricity = d3.svg.brush()
 	.x(graph[name].scale.x)
 	.on("brushstart", brushstart)  // on mousedown
@@ -462,6 +538,79 @@ function brush(name){
 
 	graph[name].electricity.extent( recenter(data.meta.period.max) )
 	drawBrush()
+	drawBrushOpaque()
+
+	function recenter(timestamp) {
+		console.log("Phil: " + timestamp);
+		// return 'from to' positions for brush to fit around the timestamp
+		var hhf = 180*60*1000 // three hours (180min)
+		var from = timestamp.getTime() - hhf 
+		var to = timestamp.getTime() + hhf
+
+		var end = data.meta.period.end.getTime()
+		var start = data.meta.period.start.getTime()
+
+		if(to > end){
+			var from = end - ( 2 * hhf )
+			var to = end }
+
+		if(from < start){
+			var from = start
+			var to = start + ( 2 * hhf ) }
+
+		from = new Date(from)
+		to = new Date(to)
+
+		return [from,to]
+		} // end recenter
+
+
+	function drawBrushOpaque() {
+		graph.activities_all.selectAll(".brush_opaque_g").remove();
+		//graph[name].selectAll('.zerolinetext').remove(); - to do: REMOVE ANNOTATION TEXTS AND DRAW THEM OVER THE OPACITY
+		var brush_opaque = graph.activities_all.selectAll(".rect")
+								  .data([
+								  	graph[name].electricity.extent()[0],
+								  	graph[name].electricity.extent()[1],
+								  	])
+								  .enter()
+								  .append("g")
+								  .attr("class", "brush_opaque_g")
+
+								  brush_opaque.append("rect")
+								  .attr("class", "brush_opaque")
+								  .attr("x", function(d, i) {
+								   return (i == 0) ? graph.electricity.scale.x.range()[0] : graph.electricity.scale.x(d)
+									})
+								  .attr("y", 0)
+                                  .attr("width", function(d, i) {
+                                  	return (i == 0) ? (graph.electricity.scale.x(d) - graph.electricity.scale.x.range()[0]) : 
+                                  	(graph.electricity.scale.x.range()[1] - graph.electricity.scale.x(d))
+                                  })
+                                  .attr("height",graph[name].dim.height)
+
+                                  brush_opaque.append("line")
+                                  .attr("class", "brush_opaque_lines")
+                                  .attr("x1", function(d) { return graph.electricity.scale.x(d) })
+								  .attr("y1", function(d) { return graph.electricity.scale.y.range()[0] })
+								  .attr('x2', function(d, i) { return (i == 0) ? graph.electricity_zoom.scale.x.range()[0] : graph.electricity_zoom.scale.x.range()[1] })
+								  .attr("y2", function(d) { return dim.electricity_zoom.top })
+	}
+
+	function drawBrush(){
+		drawBrushOpaque();
+		// remove old and display new
+		d3.selectAll("g.electricity").remove() // Remove previous brush
+		brushg = graph[name].append("g")
+		.attr("class", "brush")
+		.call(graph[name].electricity);
+
+		brushg.selectAll(".resize").append("path")
+		.attr("transform", "translate(0," +  graph[name].dim.height / 2 + ")")
+
+		brushg.selectAll("rect")
+		.attr("height", graph[name].dim.height);
+		} // drawBrush
 
 	function brushstart() {
 		// get current position of brush
@@ -470,6 +619,7 @@ function brush(name){
 		}
 
 	function brushmove() {
+		drawBrushOpaque();
 		// update the brush extent
 		console.log("br move")
 		console.log( recenter(graph[name].electricity.extent()[0]) )
@@ -502,36 +652,6 @@ function brush(name){
 		//d3.selectAll("g.electricity").call(graph[name].electricity)
 	}
 
-	function recenter(timestamp) {
-		// return 'from to' positions for brush to fit around the timestamp
-		var hhf = 180*60*1000 // three hours (180min)
-		var from = timestamp.getTime() - hhf 
-		var to = timestamp.getTime() + hhf
-
-		var end = data.meta.period.end.getTime()
-		var start = data.meta.period.start.getTime()
-
-		if(to > end)    { var from = end - ( 2 * hhf ) }
-		if(from < start){ var from = start }
-		var to = from + ( 2 * hhf ) 
-		from = new Date(from)
-		to = new Date(to)
-		return [from,to]
-		} // end recenter
-
-	function drawBrush(){
-		// remove old and display new
-		d3.selectAll("g.electricity").remove() // Remove previous brush
-		brushg = graph[name].append("g")
-		.attr("class", "brush")
-		.call(graph[name].electricity);
-
-		brushg.selectAll(".resize").append("path")
-		.attr("transform", "translate(0," +  graph[name].dim.height / 2 + ")")
-
-		brushg.selectAll("rect")
-		.attr("height", graph[name].dim.height);
-		} // drawBrush
 	} // end brush
 
 

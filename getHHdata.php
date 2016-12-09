@@ -3,6 +3,7 @@
 include('../db.php');
 
 // Connect to the database server
+ini_set("mysqli.default_socket","/tmp/mysql.sock");
 $db = mysqli_connect($server,$dbUserName,$dbUserPass,$dbName);
 
 if (mysqli_connect_errno()) {

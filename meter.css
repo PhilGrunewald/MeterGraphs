@@ -26,12 +26,23 @@ svg {
 }
 */
 
-
 .brush .extent {
   stroke: #090;
-  fill: #fc9;
+  fill: #fff;
+  fill-opacity: 0;
+  shape-rendering: crispEdges;
+}
+
+.brush_opaque {
+  fill: #fff;
   fill-opacity: .5;
   shape-rendering: crispEdges;
+}
+
+.brush_opaque_lines {
+  stroke-width: 1;
+  stroke: grey;
+  shape-rendering: geometricPrecision;
 }
 
 #canvas {
