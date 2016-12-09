@@ -95,8 +95,8 @@ for (i = 0; i < readings.dt.length ; i++) {
 	// And create the graphs --- simple!!!
 	electricityGraph('electricity')
 	electricityGraph('electricity_zoom')
-	activityGraph('activities_zoom')
-	activityGraph('activities_all')
+	activityGraph('activities_all')	//additional functionality: stores ALL activities in a global variable
+	activityGraph('activities_zoom') //switched places with the line above (requires access to ALL activities)
 	brush('electricity')
 	
 	// trigger the zoom window to draw to brush size
@@ -198,11 +198,96 @@ function activityGraph(name){
 			}) 
 	})
 	data.periods = []
-		_.each(periods,function(period){ data.periods.push(period) })  
-	// ######## Graphs
-	graph[name].selectAll('rect').data(data.periods)
-	.enter().append('rect')
+		_.each(periods,function(period){ data.periods.push(period) }) 
+	if (name == "activities_all") { all_activities = data.periods; }  //stores all the activities
+	// ######## Graphs - OLD
+	// graph[name].selectAll('rect').data(data.periods)
+	// .enter().append('rect')
+	// .style('fill', function(d,i) { return d.dotcolour })
+	// .attr('width', wMap )
+	// .attr('x', xMap)
+	// .attr('height', hMap)
+	// .attr('y', yMap )
+	// .attr("rx", 6)
+	// .attr("ry", 6)
+	// .on("mouseover", function(d) {
+	// 	//if (find_next_user_activity(d) != "None") {console.log(find_next_user_activity(d).activities[0].activity)}
+	// 	tooltip.transition()
+	// 	.duration(200)
+	// 	.style("visibility", "visible") 
+	// 	.style("opacity", .9);
+	// 	tooltip.html(toolbox_label(d))
+	// 	.style("left", (d3.event.pageX + 5) + "px")
+	// 	.style("top", (d3.event.pageY - 28) + "px") 
+	// 	})
+	// .on("mouseout", function(d) {
+	// 	tooltip.transition()
+	// 	.duration(1500)
+	// 	.style("opacity", 0)  
+	// 	.style("border", "none")
+	// 	})
+
+	//NEW
+	var activities_instances = graph[name].selectAll('activities_instances')
+									   .data(data.periods)
+									   .enter()
+									   .append('g')
+	activities_instances.append('rect')
 	.style('fill', function(d,i) { return d.dotcolour })
+	.attr('width', wMap )
+	.attr('x', xMap)
+	.attr('height', hMap)
+	.attr('y', yMap )
+	.attr("rx", 6)
+	.attr("ry", 6)
+
+	act_per = create_activity_periods();
+
+	function create_activity_periods() {
+		var xmin = graph[name].scale.x.domain()[0];
+		var xmax = graph[name].scale.x.domain()[1];
+		var activity_periods = [], next_activity, this_activity_time, next_activity_time, act_period_lhs, act_period_rhs; 
+		all_activities.forEach(function(this_activity){
+			next_activity = find_next_user_activity(this_activity);
+			if (next_activity) { 
+				this_activity_time = this_activity.dt_period;
+				next_activity_time = next_activity.dt_period;
+				if ( (next_activity_time > xmin) && (this_activity_time < xmax)) {
+					act_period_lhs = (this_activity_time < xmin) ? xmin : this_activity_time;
+					act_period_rhs = (next_activity_time > xmax) ? xmax : next_activity_time;			
+					var activity_period = {
+						"bounding_activities_full":[this_activity, next_activity],
+						"bounding_activities":[this_activity.activities[0].activity, next_activity.activities[0].activity],
+						"x":graph[name].scale.x(act_period_lhs),
+						"width":(graph[name].scale.x(act_period_rhs) - graph[name].scale.x(act_period_lhs)),
+						"location":this_activity.activities[0].location_label,
+						//inherited from activities instances:
+						"height":((name=='activities_zoom')?height.activityZoom:height.activity),
+						"y":(data.meta.users.indexOf(this_activity.idMeta) * ((name=='activities_zoom')?height.activityZoom:height.activity) )
+					}
+					activity_periods.push(activity_period);
+				}
+			}
+		})
+		return activity_periods;
+	}
+
+	var activities_periods = graph[name].selectAll('.activity_periods')
+									   .data(act_per)
+									   .enter()
+									   .append('rect')
+									.attr('width', function(d){return d.width})
+									.attr('x', function(d){return d.x})
+									.attr('height', function(d){return d.height})
+									.attr('y', function(d){return d.y})
+									.attr('class', function(d){return (d.location == "Home") ? "home" : "away"})
+
+graph[name].selectAll('activities_instances2')
+	   .data(data.periods)
+	   .enter()
+	   .append('rect')
+	.style('fill', 'grey')
+	.style('opacity', 0)
 	.attr('width', wMap )
 	.attr('x', xMap)
 	.attr('height', hMap)
@@ -224,9 +309,28 @@ function activityGraph(name){
 		.style("opacity", 0)  
 		.style("border", "none")
 		})
-	//.on('click', function(d){
-	//    $('#timestamp').val(d.dt_period)
-	//    $('#modalActivity').modal('show') })
+
+
+	function find_next_user_activity(d) { //for when d is an element of data.periods
+		var next_user_activity = false;
+		var time_next_activity = graph.activities_all.scale.x.domain()[1]; //Since have to look outside the zoomed-in area as well
+		all_activities.forEach(function(g) {//Note here we search through ALL the activity list, not just the domain of this graph.
+		//If searching within this domain, use "data.periods.forEach"
+			if (g.idMeta == d.idMeta) {
+				if ( (g.dt_period > d.dt_period) &&
+				   	 (g.dt_period <= time_next_activity) ) {
+					time_next_activity = g.dt_period;
+					next_user_activity = g;
+				}
+			}
+		})
+		return next_user_activity;
+	}
+
+	// //.on('click', function(d){
+	// //    $('#timestamp').val(d.dt_period)
+	// //    $('#modalActivity').modal('show') })
+	// ===========================================================================================
 
 	// User labels
 	if(name == 'activities_zoom'){
@@ -589,7 +693,8 @@ function brush(name){
 		drawBrushOpaque();
 		// remove old and display new
 		d3.selectAll("g.electricity").remove() // Remove previous brush
-		brushg = graph[name].append("g")
+		//brushg = graph[name].append("g")
+		brushg = graph.activities_all.append("g")
 		.attr("class", "brush")
 		.call(graph[name].electricity);
 

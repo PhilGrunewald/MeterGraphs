@@ -64,6 +64,15 @@ svg {
   shape-rendering: geometricPrecision;
 }
 
+.home {
+  fill: #F8F8F8;
+  fill-opacity: .5;
+}
+.away {
+  fill: #D8D8D8;
+  fill-opacity: .5;
+}
+
 #canvas {
   display: inline-block;
   margin-top: 10px;
