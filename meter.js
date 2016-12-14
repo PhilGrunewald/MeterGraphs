@@ -68,7 +68,8 @@ var height = {
 	"activities_bar_spacing": 2, //vertical distance between activities bars
 	"activities_bar_zoom":		20,
 	"activity_zoom": 				 18,
-	"activities_bar_spacing_zoom": 4 //vertical distance between activities bars
+	"activities_bar_spacing_zoom": 4, //vertical distance between activities bars
+	"el_reading_boxes": 20
 }
 var margins = {
 	"canvas_left":      40,
@@ -123,10 +124,6 @@ d3.json(apiurl, function(error, json) {
 															 .y0(function(d) { return electricityScaleY.range()[1] - electricityScaleY(d.watt); })
 															 .y1( electricityScaleY.range()[1] )
 
-	//  var electricity_area_background = d3.svg.area()
-	// 															.x(function(d) { return electricityScaleX(d.timestamp); })
-	// 															.y0(function(d) { return electricityScaleY.range()[1] - electricityScaleY(d.watt); })
-	// 															.y1(0)
 
 	electricity_g.append('path')
 							 .datum(data.energy)
@@ -291,38 +288,6 @@ function create_daylight_dict_LINEAR() {
 											 .tickFormat("") //so that nothing is shown
 											 .scale(electricity_zoomScaleX);
 
-  // electricity_zoom_g.append('g')
-	// 									.attr('class', 'x_axis')
-	// 									.attr('transform', 'translate(0, ' + (height.zoom - 10) + ')')
-	// 									.call(el_zoom_axis);
-  // draw_ticks_zoom(electricity_zoom_g);
-	//
-  // function draw_ticks_zoom(group) {
-	// 	var v = group.selectAll('g');
-	//
-	// 	var text_hour = v.selectAll("g")
-	// 										.append("text")
-	// 										.style("font-size", "80")
-	// 										.style("fill","#666")
-	// 										.style("text-anchor", "end")
-	// 										.text(function(d){
-	// 													var format = d3.time.format('%-I %p');
-	// 													var out = (format(d)).split(" ", 2);
-	// 													var date = out[0];
-	// 													return date;})
-	// 	var text_ampm = v.selectAll("g")
-	// 										.append("text")
-	// 										.style("text-anchor", "end")
-	// 										.style("font-size", "20")
-	// 										.attr("fill","#666")
-	// 										.text(function(d){
-	// 											var format = d3.time.format('%-I %p');
-	// 											var out = (format(d)).split(" ", 2);
-	// 											var date = out[1].toLowerCase();
-	// 											return date;})
-	// 	text_ampm.attr("transform", "translate(25,0)")
-	// }
-	//
 
 
 	//necessary so that the plot does not split over the sides
@@ -344,43 +309,27 @@ var electricity_graph =  electricity_zoom_g.append('path')
 //adding the hover_over_el->see_the_watt_value functionality
 var bisectDate = d3.bisector(function(d) { return d.timestamp }).left;
 electricity_graph.on('mousemove', function(d) {
-		var this_time = electricity_zoomScaleX.invert(d3.mouse(this)[0]);
+		var x = d3.mouse(this)[0];
+		var this_time = electricity_zoomScaleX.invert(x);
 		var ind = bisectDate(data.energy, this_time);
-		el_reading_boxes.each(function(g){
-			var ind2 = bisectDate(data.energy, g.timestamp);
-			if (ind == ind2) {
-				el_reading_boxes.attr('opacity', 0);
-				d3.select(this).attr('opacity', 0.5);
-			}
-		})
-});
+		var y = electricity_zoomScaleY.range()[1] - electricity_zoomScaleY(data.energy[ind].watt)
+		el_reading_rect.attr("x", x)
+		 							 .attr("y", y - height.el_reading_boxes)
+									 .attr("width", width.el_reading_boxes)
+									 .attr("height", 20)
+		 el_reading.attr("x", x + 5)
+							 .attr("y", y - height.el_reading_boxes - 10)
+							 .text(data.energy[ind].watt)
+})
+.on('mouseout', function(){
+	el_reading_rect.attr("width", 0).attr("height", 0);
+	el_reading.text("")
+})
 
-var el_reading_boxes = electricity_zoom_g.selectAll('g')
-											 									 .data(data.energy)
-																				 .enter()
-																				 .append('g')
-																				 .attr("opacity", 0);
-el_reading_boxes.append('rect')
-								.attr("class", "el_readings_boxes")
-								.attr("x", function(d) {return electricity_zoomScaleX(d.timestamp)})
-								.attr("y", function(d) {return electricity_zoomScaleY.range()[1] - electricity_zoomScaleY(d.watt);})
-								.attr("width", function(d){
-									if (
-										(d.timestamp > electricity_zoomScaleX.domain()[0]) &&
-										(d.timestamp < electricity_zoomScaleX.domain()[1])
-									) {return width.el_reading_boxes;} else {return 0;}
-								})
-								.attr("height", 20)
-								.attr("fill", 'green');
 
-el_reading_boxes.append('text')
-									.attr("class", "el_readings")
-								 .attr('x', function(d) {return electricity_zoomScaleX(d.timestamp)})
-								 .attr('y', function(d) {return electricity_zoomScaleY.range()[1] - electricity_zoomScaleY(d.watt) - 10;})
- 									.attr('dy', '2em')
- 									.attr('text-anchor', 'start')
- 									.text(function(d) {return d.watt})
-									.attr('fill', 'black')
+
+
+
 
 //adding the click_on_electricity->a_form_comes_up functionality
 electricity_graph.on("click", function() {
@@ -599,6 +548,17 @@ var activity_rects = zoom_activities_instances.append('rect')
 											.style("border", "none")
 											})
 
+//ONLY THE ONE BOX!!! :))))))
+var el_reading_box = activities_zoom_g.append('g').attr('opacity', 0.8); //append to the activity zoom graph so as to see the reading _over_ the activity lines and boxes
+var el_reading_rect = el_reading_box.append('rect')
+							.attr("width", width.el_reading_boxes)
+							.attr("height", height.el_reading_boxes)
+							.attr("fill", 'green');
+
+var el_reading = el_reading_box.append('text')
+									.attr('dy', '2em')
+									.attr('text-anchor', 'start')
+								  .attr('fill', 'black')
 
 //.attr("pointer-events", "none") //not important
 
@@ -712,28 +672,6 @@ var activity_rects = zoom_activities_instances.append('rect')
 																						.attr('x', function(d){return d.x})
 																						.attr('height', function(d){return d.height})
 																						.attr('y', function(d){return d.y})
-																						el_reading_boxes.select('.el_readings_boxes').attr("x", function(d) {return electricity_zoomScaleX(d.timestamp)})
-																						.attr("width", function(d){
-																							if (
-																							(d.timestamp > electricity_zoomScaleX.domain()[0]) &&
-																							(d.timestamp < electricity_zoomScaleX.domain()[1])
-																						) {
-																							return width.el_reading_boxes;
-																						} else {
-																							return 0;
-																						}
-																						})
-																						el_reading_boxes.select('.el_readings').attr("x", function(d) {return electricity_zoomScaleX(d.timestamp)})
-																						.text(function(d){
-																							if (
-																							(d.timestamp > electricity_zoomScaleX.domain()[0]) &&
-																							(d.timestamp < electricity_zoomScaleX.domain()[1])
-																						) {
-																							return d.watt;
-																						} else {
-																							return "";
-																						}
-																						})
 																					})
 
 			activities_g.append("g")
@@ -770,28 +708,6 @@ var activity_rects = zoom_activities_instances.append('rect')
 				//!The code below 'manually' sets the LHS of the rectangle associated with the brush to the LHS of it's extent. Works great.
 				d3.select('.brush .extent').attr('x', electricityScaleX(brush.extent()[0]))
 				brush(d3.select(".brush")); //Whereas this code somehow does it automatically. But! it lags!!! So use the code above.
-				el_reading_boxes.select('.el_readings_boxes').attr("x", function(d) {return electricity_zoomScaleX(d.timestamp)})
-				.attr("width", function(d){
-					if (
-					(d.timestamp > electricity_zoomScaleX.domain()[0]) &&
-					(d.timestamp < electricity_zoomScaleX.domain()[1])
-				) {
-					return width.el_reading_boxes;
-				} else {
-					return 0;
-				}
-				})
-				el_reading_boxes.select('.el_readings').attr("x", function(d) {return electricity_zoomScaleX(d.timestamp)})
-				.text(function(d){
-					if (
-					(d.timestamp > electricity_zoomScaleX.domain()[0]) &&
-					(d.timestamp < electricity_zoomScaleX.domain()[1])
-				) {
-					return d.watt;
-				} else {
-					return "";
-				}
-				})
 			}
 
 			//=============== Dragging functionality ===============
