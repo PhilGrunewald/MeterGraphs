@@ -78,7 +78,7 @@ var margins = {
 }
 var width = {
 	"electricity": 650,
-	"el_reading_boxes": 40
+	"el_reading_boxes": 65
 }
 //=================================================================
 
@@ -319,7 +319,7 @@ electricity_graph.on('mousemove', function(d) {
 									 .attr("height", 20)
 		 el_reading.attr("x", x + 5)
 							 .attr("y", y - height.el_reading_boxes - 10)
-							 .text(data.energy[ind].watt)
+							 .text(data.energy[ind].watt + " Watt")
 })
 .on('mouseout', function(){
 	el_reading_rect.attr("width", 0).attr("height", 0);
