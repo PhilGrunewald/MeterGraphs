@@ -158,7 +158,7 @@ electricity_g.selectAll('.daytime_rects')
 								if (D[t]) {
 									return d3.rgb(colour[0], colour[1], colour[2])
 								} else {
-									return 'grey'
+									return 'white'
 								}
 						 })
 						 .attr("stroke", function(d){
@@ -169,7 +169,7 @@ electricity_g.selectAll('.daytime_rects')
 								if (D[t]) {
 									return d3.rgb(colour[0], colour[1], colour[2])
 								} else {
-									return 'grey'
+									return 'white'
 								}
 
 						 })
@@ -179,54 +179,83 @@ function create_daylight_dict_LINEAR() {
 	var daylight_dict = {};
 	//Find out how many readings there are between highest_sun and darkest_night
 	var highest_sun = '12 00', darkest_night = '00 00';
-	var first_half_day = [], second_half_day = [];
+	var day_time = ['08 00', '16 00']
+	var night_time = ['18 00', '06 00']
+	var dawn = [], twilight = [], day = [], night = [];
 	var format = d3.timeFormat("%H %M"); //hour (24) minute
-	var record_fhd = false, record_shd = false;
+	var record_dawn = false, record_twilight = false, record_day = false, record_night = false;
 	(data.energy).forEach(function(d) {
 		time = d.timestamp;
-		if (format(time) == darkest_night){
-			record_fhd = true;
-			record_shd = false;
+		if (format(time) == day_time[0]){
+			record_dawn = false;
+			record_day = true;
 		}
-		if (format(time) == highest_sun){
-			record_fhd = false;
-			record_shd = true;
+		if (format(time) == night_time[0]){
+			record_twilight = false;
+			record_night = true;
 		}
-		if (record_fhd) {
-			first_half_day.push(time)
+		if (format(time) == day_time[1]){
+			record_twilight = true;
+			record_day = false;
 		}
-		if (record_shd) {
-			second_half_day.push(time)
+		if (format(time) == night_time[1]){
+			record_dawn = true;
+			record_night = false;
+		}
+		if (record_dawn) {
+			dawn.push(time)
+		}
+		if (record_twilight) {
+			twilight.push(time)
+		}
+		if (record_day) {
+			day.push(time)
+		}
+		if (record_night) {
+			night.push(time)
 		}
 	})
 
-	var colour_highest_sun = [255,255,0]; //rgb
-	var colour_darkest_night = [25,25,112];
+	var colour_day_time = [255,235,59]; //rgb
+	var colour_night_time = [117, 117, 117];
 
-	var range_R = colour_highest_sun[0] - colour_darkest_night[0];
-	var range_B = colour_highest_sun[1] - colour_darkest_night[1];
-	var range_G = colour_highest_sun[2] - colour_darkest_night[2];
-	var num_bits = first_half_day.length - 1; //same length for second_half_day
-	var inc_R = range_R/num_bits;
-	var inc_B = range_B/num_bits;
-	var inc_G = range_G/num_bits;
+	var range_R = colour_day_time[0] - colour_night_time[0];
+	var range_B = colour_day_time[1] - colour_night_time[1];
+	var range_G = colour_day_time[2] - colour_night_time[2];
+	var num_bits_dawn = dawn.length - 1;
+	var num_bits_twilight = twilight.length - 1;
+	var inc_R_dawn = range_R/num_bits_dawn;
+	var inc_B_dawn = range_B/num_bits_dawn;
+	var inc_G_dawn = range_G/num_bits_dawn;
+	var inc_R_twilight = range_R/num_bits_twilight;
+	var inc_B_twilight = range_B/num_bits_twilight;
+	var inc_G_twilight = range_G/num_bits_twilight;
 
-	first_half_day.forEach(function(time) {
-		var ind = first_half_day.indexOf(time);
-		var new_R = colour_darkest_night[0] + ind*inc_R;
-		var new_B = colour_darkest_night[1] + ind*inc_B;
-		var new_G = colour_darkest_night[2] + ind*inc_G;
+	dawn.forEach(function(time) {
+		var ind = dawn.indexOf(time);
+		var new_R = colour_night_time[0] + ind*inc_R_dawn;
+		var new_B = colour_night_time[1] + ind*inc_B_dawn;
+		var new_G = colour_night_time[2] + ind*inc_G_dawn;
 		var t = format(time);
 		daylight_dict[t] = [new_R, new_B, new_G]
 	})
-	second_half_day.forEach(function(time) {
-		var ind = second_half_day.indexOf(time);
-		var new_R = colour_highest_sun[0] - ind*inc_R;
-		var new_B = colour_highest_sun[1] - ind*inc_B;
-		var new_G = colour_highest_sun[2] - ind*inc_G;
+	twilight.forEach(function(time) {
+		var ind = twilight.indexOf(time);
+		var new_R = colour_day_time[0] - ind*inc_R_twilight;
+		var new_B = colour_day_time[1] - ind*inc_B_twilight;
+		var new_G = colour_day_time[2] - ind*inc_G_twilight;
 		var t = format(time);
 		daylight_dict[t] = [new_R, new_B, new_G]
 	})
+	day.forEach(function(time) {
+		var t = format(time);
+		daylight_dict[t] = colour_day_time;
+	})
+	night.forEach(function(time) {
+		var t = format(time);
+		daylight_dict[t] = colour_night_time;
+	})
+
 	return daylight_dict;
 }
 
