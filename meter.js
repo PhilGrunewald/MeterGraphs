@@ -122,42 +122,113 @@ d3.json(apiurl, function(error, json) {
 															 .x(function(d) { return electricityScaleX(d.timestamp); })
 															 .y0(function(d) { return electricityScaleY.range()[1] - electricityScaleY(d.watt); })
 															 .y1( electricityScaleY.range()[1] )
+
+	//  var electricity_area_background = d3.svg.area()
+	// 															.x(function(d) { return electricityScaleX(d.timestamp); })
+	// 															.y0(function(d) { return electricityScaleY.range()[1] - electricityScaleY(d.watt); })
+	// 															.y1(0)
+
 	electricity_g.append('path')
 							 .datum(data.energy)
 							 	.attr('class', 'area-energy')
 							 	.attr('d', electricity_area);
 
-  // electricity_g.append('g')
-	// 							.attr('class', 'x axis')
-	// 							.attr('transform', 'translate(0, ' + (height.overview-10) + ')')
-	// 							.call(d3.axisBottom()
-	// 								.ticks(2)
-	// 								.tickFormat("") //so that nothing is shown
-	// 								.scale(electricityScaleX)
-	//							)
-// var v = electricity_g.selectAll('g')
-// var text_hour = v.selectAll("g")
-// 	.append("text")
-// 	.style("font-size", "80")
-// 		.style("fill","#666")
-// 		.style("text-anchor", "end")
-// 	.text(function(d){
-// 				var format = d3.time.format('%-I %p');
-// 				var out = (format(d)).split(" ", 2);
-// 				var date = out[0];
-// 				return date;})
-// var text_ampm = v.selectAll("g")
-// 		.append("text")
-// 	.style("text-anchor", "end")
-// 	.style("font-size", "20")
-// 	.attr("fill","#666")
-// 	.text(function(d){
-// 				var format = d3.time.format('%-I %p');
-// 				var out = (format(d)).split(" ", 2);
-// 				var date = out[1].toLowerCase();
-// 				return date;})
-// text_ampm.attr("transform", "translate(25,0)")
 
+D = create_daylight_dict_LINEAR();
+function daylight_rect(d, scaleX, scaleY, width) {
+ 	return [{x:scaleX(d.timestamp), y:0}, {x:scaleX(d.timestamp), y:(scaleY.range()[1] - scaleY(d.watt))}, {x:(scaleX(d.timestamp)+width), y:(scaleY.range()[1] - scaleY(d.watt))}, {x:(scaleX(d.timestamp)+width), y:0}]
+}
+var lineFunction = d3.svg.line()
+  												.x(function(d) { return d.x; })
+ 													.y(function(d) { return d.y; })
+ 													.interpolate("linear");
+electricity_g.selectAll('.daytime_rects')
+						 .data(data.energy)
+						 .enter()
+						 .append('path')
+						 .attr('d', function(d){
+							 var width = electricityScaleX(data.energy[1].timestamp) - electricityScaleX(data.energy[0].timestamp);
+							 var myrect = daylight_rect(d, electricityScaleX, electricityScaleY, width);
+							 return lineFunction(myrect)})
+						 .attr("fill", function(d){
+							  var format = d3.timeFormat("%H %M");
+								var time = d.timestamp;
+								var t = format(time);
+								var colour = D[t]
+								if (D[t]) {
+									return d3.rgb(colour[0], colour[1], colour[2])
+								} else {
+									return 'grey'
+								}
+						 })
+						 .attr("stroke", function(d){
+								var format = d3.timeFormat("%H %M");
+								var time = d.timestamp;
+								var t = format(time);
+								var colour = D[t]
+								if (D[t]) {
+									return d3.rgb(colour[0], colour[1], colour[2])
+								} else {
+									return 'grey'
+								}
+
+						 })
+
+
+function create_daylight_dict_LINEAR() {
+	var daylight_dict = {};
+	//Find out how many readings there are between highest_sun and darkest_night
+	var highest_sun = '12 00', darkest_night = '00 00';
+	var first_half_day = [], second_half_day = [];
+	var format = d3.timeFormat("%H %M"); //hour (24) minute
+	var record_fhd = false, record_shd = false;
+	(data.energy).forEach(function(d) {
+		time = d.timestamp;
+		if (format(time) == darkest_night){
+			record_fhd = true;
+			record_shd = false;
+		}
+		if (format(time) == highest_sun){
+			record_fhd = false;
+			record_shd = true;
+		}
+		if (record_fhd) {
+			first_half_day.push(time)
+		}
+		if (record_shd) {
+			second_half_day.push(time)
+		}
+	})
+
+	var colour_highest_sun = [255,255,0]; //rgb
+	var colour_darkest_night = [25,25,112];
+
+	var range_R = colour_highest_sun[0] - colour_darkest_night[0];
+	var range_B = colour_highest_sun[1] - colour_darkest_night[1];
+	var range_G = colour_highest_sun[2] - colour_darkest_night[2];
+	var num_bits = first_half_day.length - 1; //same length for second_half_day
+	var inc_R = range_R/num_bits;
+	var inc_B = range_B/num_bits;
+	var inc_G = range_G/num_bits;
+
+	first_half_day.forEach(function(time) {
+		var ind = first_half_day.indexOf(time);
+		var new_R = colour_darkest_night[0] + ind*inc_R;
+		var new_B = colour_darkest_night[1] + ind*inc_B;
+		var new_G = colour_darkest_night[2] + ind*inc_G;
+		var t = format(time);
+		daylight_dict[t] = [new_R, new_B, new_G]
+	})
+	second_half_day.forEach(function(time) {
+		var ind = second_half_day.indexOf(time);
+		var new_R = colour_highest_sun[0] - ind*inc_R;
+		var new_B = colour_highest_sun[1] - ind*inc_B;
+		var new_G = colour_highest_sun[2] - ind*inc_G;
+		var t = format(time);
+		daylight_dict[t] = [new_R, new_B, new_G]
+	})
+	return daylight_dict;
+}
 
 
 	//============ Create zoomed electricity area graph ============
