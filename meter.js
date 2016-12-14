@@ -213,8 +213,8 @@ function create_daylight_dict_LINEAR() {
 		}
 	})
 
-	var colour_day_time = [255,235,59]; //rgb
-	var colour_night_time = [117, 117, 117];
+	var colour_day_time = [235,215,159]; //rgb
+	var colour_night_time = [117, 117, 187];
 
 	var range_R = colour_day_time[0] - colour_night_time[0];
 	var range_B = colour_day_time[1] - colour_night_time[1];
