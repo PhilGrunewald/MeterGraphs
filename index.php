@@ -9,7 +9,7 @@
 	<script src="libs/lodash.js"></script>
   <script src="libs/jquery-2.2.1.min.js"></script>
   <script src="libs/bootstrap.min.js"></script>
-
+  <script type="text/javascript" src="d3/d3.js"></script>
 </head>
 <body>
   <?php
@@ -72,7 +72,7 @@
               </form>
           <div id='errormsg'></div>
         </div>
-              
+
         <!-- Modal Footer -->
         <div class="modal-footer">
             <button type="button" class="btn btn-danger" data-dismiss="modal"> Cancel </button>
@@ -81,8 +81,8 @@
       </div>
     </div>
   </div>
-</div> 
-</div> 
-</div> 
+</div>
+</div>
+</div>
 </body>
 </html>

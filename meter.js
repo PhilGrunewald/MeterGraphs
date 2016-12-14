@@ -58,28 +58,28 @@ var data = {
 }
 
 var height = {
-	"overview": 		80,
+	"overview": 				80,
 	"activities":       10,
 	"spacing":          60,
 	"zoom":            200,
-	"activities_zoom":  20
+	"activities_zoom":  20,
+	"activities_bar":		10,
+	"activity": 				 8,
+	"activities_bar_spacing": 2, //vertical distance between activities bars
+	"activities_bar_zoom":		20,
+	"activity_zoom": 				 18,
+	"activities_bar_spacing_zoom": 4 //vertical distance between activities bars
 }
 var margins = {
 	"canvas_left":      40,
 	"canvas_top":				10,
 	"canvas_right":     10
 }
+var width = {
+	"electricity": 650,
+	"el_reading_boxes": 40
+}
 //=================================================================
-
-
-var tooltip = d3.select('body').append('div').attr("class", "tooltip");
-var canvas = d3.select('#canvas') //a Pointer to newly created svg element
-							 .append('svg')
-							 .attr('transform', 'translate(' + margins.canvas_left + ', ' + + margins.canvas_top + ')');
-var overview = canvas.append('g')
-										 .attr('transform', 'translate(10, 10)');
-var electricity_area = overview.append('g')
-															 .attr('transform', 'translate(10, 10)');
 
 
 
@@ -89,26 +89,707 @@ d3.json(apiurl, function(error, json) {
 	if (error){ console.log(error) } //are we sure if don't want this to be an IF/ELSE?
 	data.read_in(json);
 
-	canvas.append("g")
-				.attr("class", "overview")
+	var tooltip = d3.select('body').append('div').attr("class", "tooltip");
+	var canvas = d3.select('#canvas') //a Pointer to newly created svg element
+								 .append('svg')
+								 .attr('width', 1000)
+								 .attr('height', 1000)
+								 .attr('transform', 'translate(' + margins.canvas_left + ', ' + margins.canvas_top + ')');
+	var overview = canvas.append('g')
+											 	.attr('transform', 'translate(10, 10)');
+	var electricity_g = overview.append('g')
+															 .attr('transform', 'translate(10, 10)');
+	var activities_g = overview.append('g')
+															 .attr('transform', 'translate(10, 10)');
+	var electricity_zoom_g = canvas.append('g')
+															 		.attr('transform', 'translate(10, 200)');
+	var activities_zoom_g = canvas.append('g')
+															 		.attr('transform', 'translate(10, 200)');
+																	//note that if, instead, this was appended to electricity_zoom_g, then the squares would have appeared behind the electricity area
+
+
+
+
+
+	//============ Create electricity area graph ============
+	electricityScaleX = d3.time.scale()//scaleLinear()
+				.domain(d3.extent(data.energy, function(d) { return d.timestamp }))
+				.range([0, width.electricity]);
+	var electricityScaleY = d3.scaleLinear()
+				.domain(d3.extent(data.energy, function(d) { return d.watt }))
+				.range([0, height.overview]);
+	var electricity_area = d3.svg.area()
+															 .x(function(d) { return electricityScaleX(d.timestamp); })
+															 .y0(function(d) { return electricityScaleY.range()[1] - electricityScaleY(d.watt); })
+															 .y1( electricityScaleY.range()[1] )
+	electricity_g.append('path')
+							 .datum(data.energy)
+							 	.attr('class', 'area-energy')
+							 	.attr('d', electricity_area);
+
+  // electricity_g.append('g')
+	// 							.attr('class', 'x axis')
+	// 							.attr('transform', 'translate(0, ' + (height.overview-10) + ')')
+	// 							.call(d3.axisBottom()
+	// 								.ticks(2)
+	// 								.tickFormat("") //so that nothing is shown
+	// 								.scale(electricityScaleX)
+	//							)
+// var v = electricity_g.selectAll('g')
+// var text_hour = v.selectAll("g")
+// 	.append("text")
+// 	.style("font-size", "80")
+// 		.style("fill","#666")
+// 		.style("text-anchor", "end")
+// 	.text(function(d){
+// 				var format = d3.time.format('%-I %p');
+// 				var out = (format(d)).split(" ", 2);
+// 				var date = out[0];
+// 				return date;})
+// var text_ampm = v.selectAll("g")
+// 		.append("text")
+// 	.style("text-anchor", "end")
+// 	.style("font-size", "20")
+// 	.attr("fill","#666")
+// 	.text(function(d){
+// 				var format = d3.time.format('%-I %p');
+// 				var out = (format(d)).split(" ", 2);
+// 				var date = out[1].toLowerCase();
+// 				return date;})
+// text_ampm.attr("transform", "translate(25,0)")
+
+
+
+	//============ Create zoomed electricity area graph ============
+	electricity_zoomScaleX = d3.time.scale()//scaleLinear()
+				.domain(d3.extent(data.energy, function(d) { return d.timestamp }))
+				.range([0, width.electricity]);
+	var electricity_zoomScaleY = d3.scaleLinear()
+				.domain(d3.extent(data.energy, function(d) { return d.watt }))
+				.range([0, height.zoom]);
+	var electricity_zoom_area = d3.svg.area()
+															 .x(function(d) { return electricity_zoomScaleX(d.timestamp); })
+															 .y0(function(d) { return electricity_zoomScaleY.range()[1]; } )
+															 //Either: use this if want brush jumps to be smooth translations
+															 .y1(function(d) { return electricity_zoomScaleY.range()[1] - electricity_zoomScaleY(d.watt); });
+															 //Note!!! the above renders perfectly. The thing below, on the other hand, you can see lines as they are being drawn. Fault: in the conditional if. But also, this way around is better.
+															//  .y0(function(d) { return electricity_zoomScaleY.range()[1] - electricity_zoomScaleY(d.watt); } )
+															//Or: use this if want brush jumps to give the appearance of creation/destruction of contents of zoomd in plot
+															// .y1(function(d) { //this needs to be explicit, otherwise will draw outside the plot area
+															// if ( (electricity_zoomScaleX(d.timestamp) > electricity_zoomScaleX.range()[1] ) || (electricity_zoomScaleX(d.timestamp) < electricity_zoomScaleX.range()[0]) ) {
+															// 	return electricity_zoomScaleY.range()[1];
+															// // 		 return electricity_zoomScaleY.range()[1] - electricity_zoomScaleY(d.watt);
+														  // } else {
+															//  		  return electricity_zoomScaleY.range()[1] - electricity_zoomScaleY(d.watt);
+															//  	 }
+															//   });
+															//necessary even though we already exclude some points within the el_z_a function
+
+
+	var el_zoom_axis = d3.axisBottom()
+											 .ticks(2)
+											 .tickFormat("") //so that nothing is shown
+											 .scale(electricity_zoomScaleX);
+
+  // electricity_zoom_g.append('g')
+	// 									.attr('class', 'x_axis')
+	// 									.attr('transform', 'translate(0, ' + (height.zoom - 10) + ')')
+	// 									.call(el_zoom_axis);
+  // draw_ticks_zoom(electricity_zoom_g);
+	//
+  // function draw_ticks_zoom(group) {
+	// 	var v = group.selectAll('g');
+	//
+	// 	var text_hour = v.selectAll("g")
+	// 										.append("text")
+	// 										.style("font-size", "80")
+	// 										.style("fill","#666")
+	// 										.style("text-anchor", "end")
+	// 										.text(function(d){
+	// 													var format = d3.time.format('%-I %p');
+	// 													var out = (format(d)).split(" ", 2);
+	// 													var date = out[0];
+	// 													return date;})
+	// 	var text_ampm = v.selectAll("g")
+	// 										.append("text")
+	// 										.style("text-anchor", "end")
+	// 										.style("font-size", "20")
+	// 										.attr("fill","#666")
+	// 										.text(function(d){
+	// 											var format = d3.time.format('%-I %p');
+	// 											var out = (format(d)).split(" ", 2);
+	// 											var date = out[1].toLowerCase();
+	// 											return date;})
+	// 	text_ampm.attr("transform", "translate(25,0)")
+	// }
+	//
+
+
+	//necessary so that the plot does not split over the sides
+	electricity_zoom_g.append("clipPath")
+											.attr("id", "clip")
+										.append("rect")
+											.attr("x", 0)
+											.attr("y", 0)
+											.attr("width", width.electricity)
+											.attr("height", height.zoom);
+
+
+var electricity_graph =  electricity_zoom_g.append('path')
+																			 			.datum(data.energy)
+																			 			.attr('class', 'area-energy')
+																						.attr("clip-path", "url(#clip)")
+																			 			.attr('d', electricity_zoom_area)
+
+//adding the hover_over_el->see_the_watt_value functionality
+var bisectDate = d3.bisector(function(d) { return d.timestamp }).left;
+electricity_graph.on('mousemove', function(d) {
+		var this_time = electricity_zoomScaleX.invert(d3.mouse(this)[0]);
+		var ind = bisectDate(data.energy, this_time);
+		el_reading_boxes.each(function(g){
+			var ind2 = bisectDate(data.energy, g.timestamp);
+			if (ind == ind2) {
+				el_reading_boxes.attr('opacity', 0);
+				d3.select(this).attr('opacity', 0.5);
+			}
+		})
+});
+
+var el_reading_boxes = electricity_zoom_g.selectAll('g')
+											 									 .data(data.energy)
+																				 .enter()
+																				 .append('g')
+																				 .attr("opacity", 0);
+el_reading_boxes.append('rect')
+								.attr("class", "el_readings_boxes")
+								.attr("x", function(d) {return electricity_zoomScaleX(d.timestamp)})
+								.attr("y", function(d) {return electricity_zoomScaleY.range()[1] - electricity_zoomScaleY(d.watt);})
+								.attr("width", function(d){
+									if (
+										(d.timestamp > electricity_zoomScaleX.domain()[0]) &&
+										(d.timestamp < electricity_zoomScaleX.domain()[1])
+									) {return width.el_reading_boxes;} else {return 0;}
+								})
+								.attr("height", 20)
+								.attr("fill", 'green');
+
+el_reading_boxes.append('text')
+									.attr("class", "el_readings")
+								 .attr('x', function(d) {return electricity_zoomScaleX(d.timestamp)})
+								 .attr('y', function(d) {return electricity_zoomScaleY.range()[1] - electricity_zoomScaleY(d.watt) - 10;})
+ 									.attr('dy', '2em')
+ 									.attr('text-anchor', 'start')
+ 									.text(function(d) {return d.watt})
+									.attr('fill', 'black')
+
+//adding the click_on_electricity->a_form_comes_up functionality
+electricity_graph.on("click", function() {
+		var this_time = electricity_zoomScaleX.invert(d3.mouse(this)[0]);
+		var ind = bisectDate(data.energy, this_time);
+		var w = data.energy[ind].watt;
+		console.log("Submit appliance use for:")
+		console.log(this_time)
+		console.log(" and this el. reading: ")
+		console.log(w)
+});
+
+  //============ Create activities graph ============
+	process_activities();
+	function process_activities() {
+		data.activities = []
+		var periods = {}
+		_.each(data.users, function(user){
+			_.each(user.activities,function(act){
+				if((act.dt_activity > electricityScaleX.domain()[0]) && (act.dt_activity < electricityScaleX.domain()[1])){
+					var bin = act.period+'_'+act.idMeta
+					if(!periods.hasOwnProperty(bin)) periods[bin] = {
+						"dt_period": act.dt_period,
+						"idMeta": act.idMeta,
+						"dotcolour": act.dotcolour,
+						"activities": []}
+					data.activities.push(act)
+					periods[bin].activities.push(act)
+					}
+				})
+		})
+		data.periods = []
+			_.each(periods,function(period){ data.periods.push(period) })
+	}
+
+
+  //draw activity periods
+	act_per = create_activity_periods();
+	compute_activity_periods_visuals(act_per, electricityScaleX.domain(), "normal");
+
+	function create_activity_periods() {
+		var activity_periods = [], next_activity;
+		data.periods.forEach(function(this_activity){
+			next_activity = find_next_user_activity(this_activity);
+				if (next_activity) {
+						var activity_period = {
+							"bounding_activities_full":[this_activity, next_activity],
+							"bounding_activities":[this_activity.activities[0].activity, next_activity.activities[0].activity],
+							"location":this_activity.activities[0].location_label
+						}
+						activity_periods.push(activity_period);
+				}
+			})
+		return activity_periods;
+	}
+
+	function compute_activity_periods_visuals(activity_periods, domain, graph) {
+		var xmin = domain[0];
+		var xmax = domain[1];
+		var this_activity, next_activity, this_activity_time, next_activity_time, act_period_lhs, act_period_rhs;
+		activity_periods.forEach(function(act_period){
+			this_activity = act_period["bounding_activities_full"][0];
+			next_activity = act_period["bounding_activities_full"][1];
+			this_activity_time = this_activity.dt_period;
+			next_activity_time = next_activity.dt_period;
+			if ( (next_activity_time > xmin) && (this_activity_time < xmax)) {
+				act_period_lhs = (this_activity_time < xmin) ? xmin : this_activity_time;
+				act_period_rhs = (next_activity_time > xmax) ? xmax : next_activity_time;
+				if (graph != "zoom") {
+					act_period["x"] = electricityScaleX(act_period_lhs);
+					act_period["width"] = (electricityScaleX(act_period_rhs) - electricityScaleX(act_period_lhs));
+					act_period["y"] = (data.meta.users.indexOf(this_activity.idMeta))*(height.activities_bar + height.activities_bar_spacing);
+					act_period["height"] = height.activities_bar;
+
+				} else {
+					act_period["x"] = electricity_zoomScaleX(act_period_lhs);
+					act_period["width"] = (electricity_zoomScaleX(act_period_rhs) - electricity_zoomScaleX(act_period_lhs));
+					act_period["y"] = (data.meta.users.indexOf(this_activity.idMeta))*(height.activities_bar_zoom + height.activities_bar_spacing_zoom);
+					act_period["height"] = height.activities_bar_zoom;
+				}
+			} else {
+				act_period["height"] = 0;
+			}
+		})
+	}
+
+	function find_next_user_activity(d) { //for when d is an element of data.periods
+		var next_user_activity = false;
+		var time_next_activity = electricityScaleX.domain()[1]; //Since have to look outside the zoomed-in area as well
+		data.periods.forEach(function(g) {//Note here we search through ALL the activity list, not just the domain of this graph.
+		//If searching within this domain, use "data.periods.forEach"
+			if (g.idMeta == d.idMeta) {
+				if ( (g.dt_period > d.dt_period) &&
+						 (g.dt_period <= time_next_activity) ) {
+					time_next_activity = g.dt_period;
+					next_user_activity = g;
+				}
+			}
+		})
+		return next_user_activity;
+	}
+
+	var activities_periods = activities_g.selectAll('.activity_periods')
+																		   .data(act_per)
+																		   .enter()
+																		   .append('rect')
+																			 .attr('class', 'act_periods')
+																				.attr('width', function(d){return d.width})
+																				.attr('x', function(d){return d.x})
+																				.attr('height', function(d){return d.height})
+																				.attr('y', function(d){return d.y})
+																				.attr('class', function(d){return (d.location == "Home") ? "home" : "away"})
+
+//draw activities
+var activities_instances = activities_g.selectAll('activities_instances')
+																	 .data(data.periods)
+																	 .enter()
+																	 .append('g')
+//deliberately with no hover functionality
+activities_instances.append('rect')
+								.style('fill', function(d,i) { return d.dotcolour })
+								.attr('width', 10 )
+								.attr('x', function(d) { return electricityScaleX( d.dt_period ) })
+								.attr('height', height.activity)
+								.attr('y', function(d) {
+									var ind = data.meta.users.indexOf(d.idMeta);
+									return ind*(height.activities_bar + height.activities_bar_spacing) + (height.activities_bar - height.activity)/2.0;
+								} )
+								.attr("rx", 3)
+								.attr("ry", 3)
+
+
+
+
+//============ Create zoomed activities graph ============
+//draw activity periods
+act_per_zoom = create_activity_periods();//technically not needed - but it is this variable's internal variables that
+//will get reassigned (x, width, etc.) whenever the zoomed-in area changes - and not the variables of the main, top activities
+//plot. We'll not be plotting the top plot again, so we don't care if they get reassigned, but still.
+compute_activity_periods_visuals(act_per_zoom, electricity_zoomScaleX.domain(), "zoom");
+
+var activities_periods_zoom = activities_zoom_g.selectAll('.activity_periods_zoom')
+																		 .data(act_per_zoom)
+																		 .enter()
+																		 .append('g')
+
+var myrects = activities_periods_zoom.append('rect')
+					 .attr('class', 'act_per_zoom_rect')
+						.attr('width', function(d){return d.width})
+						.attr('x', function(d){return d.x})
+						.attr('height', function(d){return d.height})
+						.attr('y', function(d){return d.y})
+						.attr('class', function(d){return (d.location == "Home") ? "home" : "away"})
+
+
+myrects.on("click", function(d) {
+							console.log("Submit activity for user ");
+							var user = d["bounding_activities_full"][0].idMeta;
+							console.log(user);
+						})
+
+//draw activities
+var zoom_activities_instances = activities_zoom_g.selectAll('zoom_activities_instances')
+																			 .data(data.periods)
+																			 .enter()
+																			 .append('g')
+ //necessary so that the plot does not split over the sides
+ activities_zoom_g.append("clipPath")
+										 .attr("id", "activities_clip")
+									 .append("rect")
+										 .attr("x", 0)
+										 .attr("y", 0)
+										 .attr("width", width.electricity)
+										 .attr("height", height.zoom);
+
+//add labels to user activities bars
+ _.each(data.users, function(user){
+	 var ind = data.meta.users.indexOf(user.idMeta);
+	 var h = ind*(height.activities_bar_zoom + height.activities_bar_spacing_zoom);
+	 activities_zoom_g.append('text')
+										 .attr('x', 2)
+										 .attr('y', h)
+										 .attr('dy', '1em')
+										 .attr('text-anchor', 'start')
+										 .text(user.label)
+										 .attr('fill', user.dotcolour)
+										 .attr('class', 'userLabel');
+})
+
+//add activity rectanges
+var activity_rects = zoom_activities_instances.append('rect')
+										.style('fill', function(d,i) { return d.dotcolour })
+										.attr("clip-path", "url(#activities_clip)")
+										.attr('width', 20 )
+										.attr('x', function(d) { return electricity_zoomScaleX( d.dt_period ) })
+										.attr('height', height.activity_zoom)
+										.attr('y', function(d) {
+											var ind = data.meta.users.indexOf(d.idMeta);
+											return ind*(height.activities_bar_zoom + height.activities_bar_spacing_zoom) + (height.activities_bar_zoom - height.activity_zoom)/2.0;
+										} )
+										.attr("rx", 3)
+										.attr("ry", 3)
+										.on("mouseover", function(d) {
+											tooltip.transition()
+											.duration(200)
+											.style("visibility", "visible")
+											.style("opacity", .9);
+											tooltip.html(toolbox_label(d))
+											.style("left", (d3.event.pageX + 5) + "px")
+											.style("top", (d3.event.pageY - 28) + "px")
+											})
+										.on("mouseout", function(d) {
+											tooltip.transition()
+											.duration(1500)
+											.style("opacity", 0)
+											.style("border", "none")
+											})
+
+
+//.attr("pointer-events", "none") //not important
+
+
+//============= Rectangles with arrows appearing on the sides on hovering =============
+// ============= Uncomment, and assign the 'g' elements 'onclick' or 'onmousedown' events
+// function triangle(a_h, a_w, orientation) { //orientation "right" for right-facing, anything else for left-facing
+// 	return [{x:0, y:0}, {x:0, y:(a_h)}, {x:a_w*((orientation == "right")?1:(-1)), y:a_h/2.0}, {x:0, y:0}]
+// }
+// var a_h = 20, a_w = 20, ssb_width = 50, ssb_height = height.zoom;
+// var ssb = activities_zoom_g.selectAll('.scroll_side_bars')
+// 													 .data([triangle(a_h, a_w, "left"), triangle(a_h, a_w, "right")])
+// 													 .enter()
+// 										 		 	 .append('g')
+// 													 .attr('transform', function(d, i) {
+// 														 return 'translate(' + ( (i == 0)?0:(width.electricity-ssb_width) ) + ',0)';
+// 													 })
+// 													 .attr("opacity", 0);
+// var scroll_rects = ssb.append('rect')
+// 		.attr('x', 0)
+// 		.attr('y', 0)
+// 		.attr('width', ssb_width)
+// 		.attr('height', ssb_height)
+// 		.attr('fill', 'lightgrey')
+//
+// var lineFunction = d3.svg.line()
+//  													.x(function(d) { return d.x; })
+// 													.y(function(d) { return d.y; })
+// 													.interpolate("linear");
+// ssb.append('path')
+// 		.attr('transform', function(d, i) {
+// 			var x_offset = (i == 0)?( (ssb_width-a_w)/2.0 + a_w ):(ssb_width-a_w)/2.0;
+// 			return 'translate(' + x_offset + ', ' + (ssb_height-a_h)/2.0 + ')';
+// 		})
+// 		.attr('d', function(d){return lineFunction(d)})
+// 		.attr("stroke", "blue")
+// 		.attr("stroke-width", 2)
+// 		.attr("fill", "blue");
+//
+// 	ssb.on('mouseenter',function() {
+// 				d3.select(this).transition().duration(500).attr('opacity', 0.5)
+//     	})
+//      .on('mouseleave',function () {
+// 				d3.select(this).transition().duration(500).attr('opacity', 0)
+// 			})
+//=================================================================
+
+
+
+
+
+
+
+
+  //======================== ZOOM, and related ========================
+	make_brush();
+	function make_brush(){
+			brush = d3.svg.brush()
+												.x(electricityScaleX)
+												.extent(DefineExtent(data.meta.period.max))
+												.on("brush", brushed);
+
+			//First, append the opaque blocks to left and right of brush
+			var brush_opaque = activities_g.selectAll(".rect")
+							.data([brush.extent()[0],brush.extent()[1]])
+							.enter()
+							.append("g")
+							.attr("class", "brush_opaque_g")
+
+			brush_opaque.append("rect")
+									.attr("class", "brush_opaque")
+									.attr("x", function(d, i) {
+									 return (i == 0) ? electricityScaleX.range()[0] : electricityScaleX(d);
+									})
+									.attr("y", 0)
+									.attr("width", function(d, i) {
+										return (i == 0) ? (electricityScaleX(d) - electricityScaleX.range()[0]) :
+										(electricityScaleX.range()[1] - electricityScaleX(d))
+									})
+									.attr("height",height.overview)
+
+				brush_opaque.append("line")
+											 .attr("class", "brush_opaque_lines")
+											 .attr("x1", function(d) { return electricityScaleX(d) })
+											 .attr("y1", function(d) { return height.overview })
+											 .attr('x2', function(d, i) { return electricity_zoomScaleX.range()[i] })
+											 .attr("y2", function(d) { return height.overview + height.spacing })
+
+			//this defines a clickable area, where clicking moves the brush to center
+			//around that point. It has to be defined before the brush rect, so as not
+			//to overlay the brush rect
+			var clickableBrushArea = activities_g.append("rect")
+																					.attr('class', 'background')
+																					.attr("x", 0)
+																					.attr("y", 0)
+																					.attr("height", height.overview)
+																					.attr("opacity", 0)
+																					.attr("width", 600)
+																					.on('click', function(){
+																						var a = DefineExtent(electricityScaleX.invert(d3.mouse(d3.event.target)[0]));
+																						brush.extent(a);
+																						brush(d3.select(".brush").transition().duration(500));
+																						electricity_zoomScaleX.domain(brush.empty() ? electricityScaleX.domain() : brush.extent());
+																						electricity_zoom_g.select(".area-energy").transition().duration(1000).attr("d", electricity_zoom_area);
+																						activity_rects.transition().duration(1000).attr('x', function(d) { return electricity_zoomScaleX( d.dt_period ) })
+																						brush_opaque.data([brush.extent()[0],brush.extent()[1]])
+																						brush_opaque.select(".brush_opaque").transition().duration(300).attr("x", function(d, i) {return (i == 0) ? electricityScaleX.range()[0] : electricityScaleX(d);}).attr("width", function(d, i) {return (i == 0) ? (electricityScaleX(d) - electricityScaleX.range()[0]) : (electricityScaleX.range()[1] - electricityScaleX(d))})
+																						brush_opaque.select(".brush_opaque_lines").transition().duration(300).attr("x1", function(d) { return electricityScaleX(d) }).attr('x2', function(d, i) { return electricity_zoomScaleX.range()[i] })
+																						compute_activity_periods_visuals(act_per_zoom, electricity_zoomScaleX.domain(), "zoom");
+																						myrects.transition().duration(1000).attr('width', function(d){return d.width})
+																						.attr('x', function(d){return d.x})
+																						.attr('height', function(d){return d.height})
+																						.attr('y', function(d){return d.y})
+																						el_reading_boxes.select('.el_readings_boxes').attr("x", function(d) {return electricity_zoomScaleX(d.timestamp)})
+																						.attr("width", function(d){
+																							if (
+																							(d.timestamp > electricity_zoomScaleX.domain()[0]) &&
+																							(d.timestamp < electricity_zoomScaleX.domain()[1])
+																						) {
+																							return width.el_reading_boxes;
+																						} else {
+																							return 0;
+																						}
+																						})
+																						el_reading_boxes.select('.el_readings').attr("x", function(d) {return electricity_zoomScaleX(d.timestamp)})
+																						.text(function(d){
+																							if (
+																							(d.timestamp > electricity_zoomScaleX.domain()[0]) &&
+																							(d.timestamp < electricity_zoomScaleX.domain()[1])
+																						) {
+																							return d.watt;
+																						} else {
+																							return "";
+																						}
+																						})
+																					})
+
+			activities_g.append("g")
+										.attr("class", "brush")
+									 .call(brush)
+									 .selectAll("rect")
+									 .attr('id', 'mybrush')
+										.attr("y", -6)
+										.attr("height", height.overview + 7)
+			brushed(); //so that the zoomed in plot shows the initial zoomed in area
+
+			function brushed() {
+				electricity_zoomScaleX.domain(brush.empty() ? electricityScaleX.domain() : brush.extent());
+				electricity_zoom_g.select(".area-energy").attr("d", electricity_zoom_area);
+				activity_rects.attr('x', function(d) { return electricity_zoomScaleX( d.dt_period ) })
+				brush_opaque.data([brush.extent()[0],brush.extent()[1]]);
+				brush_opaque.select(".brush_opaque").attr("x", function(d, i) {
+										 return (i == 0) ? electricityScaleX.range()[0] : electricityScaleX(d);
+										})
+										.attr("width", function(d, i) {
+											return (i == 0) ? (electricityScaleX(d) - electricityScaleX.range()[0]) :
+											(electricityScaleX.range()[1] - electricityScaleX(d))
+										})
+				brush_opaque.select(".brush_opaque_lines").attr("x1", function(d) { return electricityScaleX(d) })
+				.attr('x2', function(d, i) { return electricity_zoomScaleX.range()[i] })
+				// brush_opaque.select(".brush_opaque_lines").attr("x1", function(d, i) { return ((i == 0)?d3.select('.brush .extent').property('x').baseVal.value:(d3.select('.brush .extent').property('x').baseVal.value + d3.select('.brush .extent').property('width').baseVal.value)); })
+				// .attr('x2', function(d, i) { return electricity_zoomScaleX.range()[i] })
+				compute_activity_periods_visuals(act_per_zoom, electricity_zoomScaleX.domain(), "zoom");
+				//activities_periods_zoom.data(act_per_zoom);
+				myrects.attr('width', function(d){return d.width})
+				.attr('x', function(d){return d.x})
+				.attr('height', function(d){return d.height})
+				.attr('y', function(d){return d.y})
+				//!The code below 'manually' sets the LHS of the rectangle associated with the brush to the LHS of it's extent. Works great.
+				d3.select('.brush .extent').attr('x', electricityScaleX(brush.extent()[0]))
+				brush(d3.select(".brush")); //Whereas this code somehow does it automatically. But! it lags!!! So use the code above.
+				el_reading_boxes.select('.el_readings_boxes').attr("x", function(d) {return electricity_zoomScaleX(d.timestamp)})
+				.attr("width", function(d){
+					if (
+					(d.timestamp > electricity_zoomScaleX.domain()[0]) &&
+					(d.timestamp < electricity_zoomScaleX.domain()[1])
+				) {
+					return width.el_reading_boxes;
+				} else {
+					return 0;
+				}
+				})
+				el_reading_boxes.select('.el_readings').attr("x", function(d) {return electricity_zoomScaleX(d.timestamp)})
+				.text(function(d){
+					if (
+					(d.timestamp > electricity_zoomScaleX.domain()[0]) &&
+					(d.timestamp < electricity_zoomScaleX.domain()[1])
+				) {
+					return d.watt;
+				} else {
+					return "";
+				}
+				})
+			}
+
+			//=============== Dragging functionality ===============
+			var x0;
+			var drag = d3.drag()
+			    .on("drag", dragmove)
+					.on("start", initialise_coords)
+			function initialise_coords() {
+				x0 = d3.event.x;
+			}
+			function dragmove(d) {
+			  var x = d3.event.x;
+				var time_in_brush = brush.extent()[1]-brush.extent()[0];
+				var time_in_total = electricityScaleX.domain()[1] - electricityScaleX.domain()[0];
+				var fraction_time_in_brush = time_in_brush/time_in_total;
+				var diff = x - x0;
+				var range_move = width.electricity;
+				var fraction_dragged = diff/range_move;
+				var new_time_left = brush.extent()[0] - fraction_dragged*time_in_brush;
+				var new_time_right = new_time_left + time_in_brush;
+				if ( (electricityScaleX.domain()[0] < new_time_left) && (electricityScaleX.domain()[1] > new_time_right)) {
+					brush.extent([new_time_left, new_time_right]);
+					brushed();
+				}
+				x0 = x;
+			}
+			electricity_zoom_g.call(drag); //this means that ONLY if you click on the electricity area..
+			//============================================================
+
+			function DefineExtent(timestamp) {
+				// return 'from to' positions for brush to fit around the timestamp
+				var hhf = 180*60*1000 // three hours (180min)
+				var from = timestamp.getTime() - hhf
+				var to = timestamp.getTime() + hhf
+
+				var end = data.meta.period.end.getTime()
+				var start = data.meta.period.start.getTime()
+
+				if(to > end){
+					var from = end - ( 2 * hhf )
+					var to = end }
+
+				if(from < start){
+					var from = start
+					var to = start + ( 2 * hhf ) }
+
+				from = new Date(from)
+				to = new Date(to)
+
+				return [from,to]
+				} // end recenter
+
+		}
+//========================================================================
+
+
+
+
+function toolbox_label(d){
+		// populate the activity box
+		var html = formatDayTime(d.dt_period)
+		_.each(d.activities,function(act){
+			var enjoy = "<img src=img/enjoy_"+((act.enjoyment!='undefined')?act.enjoyment:"0")+".png width='20px' height='20px'>"
+			var location = "<img src=img/location_"+((act.location!='undefined')?act.location:"0")+".png width='20px' height='20px'>"
+			html += '<br>'+act.activity+' '+location+' '+enjoy
+			})
+		return html
+	} // toolbox label
+
+	function formatDayTime(date){
+		// Return day and time in format "Thu, 9:20"
+		var seconds = date.getSeconds()
+		var minutes = date.getMinutes()
+		var hour = date.getHours()
+
+		var year = date.getFullYear()
+		var months = ['JAN','FEB','NAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
+		var month = date.getMonth() // beware: January = 0; February = 1, etc.
+		var day = date.getDate()
+
+		var daysOfWeek = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+		var dayOfWeek = date.getDay() // Sunday = 0, Monday = 1, etc.
+		var milliSeconds = date.getMilliseconds()
+
+		var pad = '00'
+
+		return daysOfWeek[dayOfWeek] + ', ' + hour + ':' + (pad + minutes).slice(-pad.length)
+	} // end formatDayTime
+
+
+
+
+
+
 
 
 	// Two alternative ways of doing the same
 	// circ = d3.select('svg').append("circle")
 	// rect = canvas.append("rect")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 })
