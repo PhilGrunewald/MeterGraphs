@@ -717,6 +717,8 @@ var el_reading = el_reading_box.append('text')
 					.on("start", initialise_coords)
 			function initialise_coords() {
 				x0 = d3.event.x;
+				el_reading_rect.attr("width", 0).attr("height", 0);
+				el_reading.text("")
 			}
 			function dragmove(d) {
 			  var x = d3.event.x;
