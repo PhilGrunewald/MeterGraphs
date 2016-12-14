@@ -78,7 +78,7 @@ var margins = {
 }
 var width = {
 	"electricity": 650,
-	"el_reading_boxes": 65
+	"el_reading_boxes": 120
 }
 //=================================================================
 
@@ -309,6 +309,7 @@ var electricity_graph =  electricity_zoom_g.append('path')
 //adding the hover_over_el->see_the_watt_value functionality
 var bisectDate = d3.bisector(function(d) { return d.timestamp }).left;
 electricity_graph.on('mousemove', function(d) {
+		var dayOfWeek = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
 		var x = d3.mouse(this)[0];
 		var this_time = electricity_zoomScaleX.invert(x);
 		var ind = bisectDate(data.energy, this_time);
@@ -319,7 +320,7 @@ electricity_graph.on('mousemove', function(d) {
 									 .attr("height", 20)
 		 el_reading.attr("x", x + 5)
 							 .attr("y", y - height.el_reading_boxes - 10)
-							 .text(data.energy[ind].watt + " Watt")
+							 .text(dayOfWeek[this_time.getDay()] +" "+ this_time.getHours() + ":" + ("0" + this_time.getMinutes()).slice(-2) + " - " +data.energy[ind].watt + " Watt")
 })
 .on('mouseout', function(){
 	el_reading_rect.attr("width", 0).attr("height", 0);
