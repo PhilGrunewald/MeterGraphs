@@ -112,6 +112,10 @@ d3.json(apiurl, function(error, json) {
 
 
 
+
+
+
+
 	//============ Create electricity area graph ============
 	electricityScaleX = d3.time.scale()//scaleLinear()
 				.domain(d3.extent(data.energy, function(d) { return d.timestamp }))
@@ -444,6 +448,8 @@ electricity_graph.on("click", function() {
 																				.attr('y', function(d){return d.y})
 																				.attr('class', function(d){return (d.location == "Home") ? "home" : "away"})
 
+
+
 //draw activities
 var activities_instances = activities_g.selectAll('activities_instances')
 																	 .data(data.periods)
@@ -463,7 +469,8 @@ activities_instances.append('rect')
 								.attr("ry", 3)
 
 
-
+var overview_labels_loc_brief = ['00 00', '06 00', '12 00', '18 00']; //this is explicit for greater control
+var my_overview_labels = append_labels(overview_labels_loc_brief, activities_g, electricityScaleX);
 
 //============ Create zoomed activities graph ============
 //draw activity periods
@@ -505,6 +512,34 @@ var zoom_activities_instances = activities_zoom_g.selectAll('zoom_activities_ins
 										 .attr("y", 0)
 										 .attr("width", width.electricity)
 										 .attr("height", height.zoom);
+
+var zoom_labels_loc_brief = ['00 00', '03 00', '06 00', '09 00', '12 00', '15 00', '18 00', '21 00']; //this is explicit for greater control
+var my_zoom_labels = append_labels(zoom_labels_loc_brief, activities_zoom_g, electricity_zoomScaleX);
+
+
+function append_labels(location_brief, group, scale) {
+	var zoom_labels_format = d3.timeFormat("%H %M");
+	var zoom_labels_loc = []; //we define it here, but it will be appended as data
+	_.each(data.timestamps, function(g) {
+		if (location_brief.includes(zoom_labels_format(g)) ) {
+			zoom_labels_loc.push(g);
+		}
+	})
+	var zoom_labels = group.selectAll('zoom_labels')
+																		 .data(zoom_labels_loc)
+																		 .enter()
+																		 .append('g')
+	var my_zoom_labels = zoom_labels.append('text')
+						 .attr('x', function(d) {return scale(d); })
+						 .attr('h', 20)
+						 .attr('dy', '1em')
+						 .attr('text-anchor', 'start')
+						 .text(function(d){return zoom_labels_format(d)})
+  return my_zoom_labels;
+}
+
+
+
 
 //add labels to user activities bars
  _.each(data.users, function(user){
@@ -673,6 +708,7 @@ var el_reading = el_reading_box.append('text')
 																						.attr('x', function(d){return d.x})
 																						.attr('height', function(d){return d.height})
 																						.attr('y', function(d){return d.y})
+																						my_zoom_labels.transition().duration(1000).attr('x', function(d){return electricity_zoomScaleX(d);})
 																					})
 
 			activities_g.append("g")
@@ -709,6 +745,7 @@ var el_reading = el_reading_box.append('text')
 				//!The code below 'manually' sets the LHS of the rectangle associated with the brush to the LHS of it's extent. Works great.
 				d3.select('.brush .extent').attr('x', electricityScaleX(brush.extent()[0]))
 				brush(d3.select(".brush")); //Whereas this code somehow does it automatically. But! it lags!!! So use the code above.
+				my_zoom_labels.attr('x', function(d){return electricity_zoomScaleX(d);})
 			}
 
 			//=============== Dragging functionality ===============
