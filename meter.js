@@ -518,24 +518,80 @@ var my_zoom_labels = append_labels(zoom_labels_loc_brief, activities_zoom_g, ele
 
 
 function append_labels(location_brief, group, scale) {
-	var zoom_labels_format = d3.timeFormat("%H %M");
-	var zoom_labels_loc = []; //we define it here, but it will be appended as data
+	var labels_format = d3.timeFormat("%H %M");
+	var labels_loc = []; //we define it here, but it will be appended as data
 	_.each(data.timestamps, function(g) {
-		if (location_brief.includes(zoom_labels_format(g)) ) {
-			zoom_labels_loc.push(g);
+		if (location_brief.includes(labels_format(g)) ) {
+			labels_loc.push(g);
 		}
 	})
-	var zoom_labels = group.selectAll('zoom_labels')
-																		 .data(zoom_labels_loc)
-																		 .enter()
-																		 .append('g')
-	var my_zoom_labels = zoom_labels.append('text')
-						 .attr('x', function(d) {return scale(d); })
-						 .attr('h', 20)
-						 .attr('dy', '1em')
-						 .attr('text-anchor', 'start')
-						 .text(function(d){return zoom_labels_format(d)})
-  return my_zoom_labels;
+	var labels = group.selectAll('labels')
+										 .data(labels_loc)
+										 .enter()
+										 .append('g')
+
+
+
+	var my_labels = [];
+	//different formatting in 'overview' and 'zoom' graphs
+	if (scale == electricity_zoomScaleX) {
+		//adding this weird clippath works. Other, normal clip paths don't. I don't know why.
+		group.append("clipPath")
+	 										 .attr("id", "temp")
+	 									 .append("rect")
+	 										 .attr("x", 0)
+	 										 .attr("y", -100)//Without this, does not work
+	 										 .attr("width", width.electricity)
+	 										 .attr("height",height.zoom)
+
+		labels.attr("transform", "translate(0," + (height.zoom - 5) + ")"); //puts labels near the bottom of the graph
+		var my_labels_hour = labels.append("text")
+															 .attr("clip-path", "url(#temp)")
+																.attr('x', function(d) {return scale(d); }) //x is set explictly, at each text (hour and am/pm),
+																//rather than doing the overall transform on g, since when the zoom window moves the corresponding
+																//transform would have had to be computed as the difference, rather than an absolute scalex value as done now
+																.style("font-size", "80")
+																.style("fill","#666")
+																.style("text-anchor", "end")
+																.text(function(d){
+																			var format = d3.time.format('%-I %p');
+																			var out = (format(d)).split(" ", 2);
+																			var date = out[0];
+																			return date;
+																})
+		my_labels.push(my_labels_hour);
+		var my_labels_ampm = labels.append("text")
+															 .attr("clip-path", "url(#temp)")
+															 .attr('x', function(d) {return scale(d); })
+															 	.style("text-anchor", "start")
+															 	.style("font-size", "20")
+															 	.attr("fill","#666")
+															 	.text(function(d){
+															 				var format = d3.time.format('%-I %p');
+															 				var out = (format(d)).split(" ", 2);
+															 				var date = out[1].toLowerCase();
+															 				return date;
+																})
+		my_labels.push(my_labels_ampm);
+	} else {
+		var format = d3.time.format('%-I %p');
+		var format_weekday = d3.time.format('%-A');
+		labels.attr('transform', function(d){
+			return 'translate(' + scale(d) + ', ' + ( (format(d) == "12 AM")?'-2)':( (height.overview/2 ) + '), rotate(-90 )'));
+		}) //this way each label gets rotated individually
+		var my_labels_complete = labels.append("text")
+																		.style("text-anchor", function(d){
+																			return ( (format(d) == "12 AM")?"start":"middle" );
+																		})
+																		.text(function(d){
+																			return ( (format(d) == "12 AM")?format_weekday(d):format(d));})
+																		.style("font-size", "20")
+																		.attr("fill","#666")
+
+		my_labels.push(my_labels_complete);
+	}
+
+  return my_labels;
 }
 
 
@@ -708,7 +764,7 @@ var el_reading = el_reading_box.append('text')
 																						.attr('x', function(d){return d.x})
 																						.attr('height', function(d){return d.height})
 																						.attr('y', function(d){return d.y})
-																						my_zoom_labels.transition().duration(1000).attr('x', function(d){return electricity_zoomScaleX(d);})
+																						_.each(my_zoom_labels, function(label){label.transition().duration(1000).attr('x', function(d){return electricity_zoomScaleX(d);})})
 																					})
 
 			activities_g.append("g")
@@ -745,7 +801,10 @@ var el_reading = el_reading_box.append('text')
 				//!The code below 'manually' sets the LHS of the rectangle associated with the brush to the LHS of it's extent. Works great.
 				d3.select('.brush .extent').attr('x', electricityScaleX(brush.extent()[0]))
 				brush(d3.select(".brush")); //Whereas this code somehow does it automatically. But! it lags!!! So use the code above.
-				my_zoom_labels.attr('x', function(d){return electricity_zoomScaleX(d);})
+				//my_zoom_labels.attr('x', function(d){return electricity_zoomScaleX(d);})
+				_.each(my_zoom_labels, function(label, index){label.attr('x', function(d){
+					//return (electricity_zoomScaleX(d) + (index == 1)?0:25); })})
+					return electricity_zoomScaleX(d); })})
 			}
 
 			//=============== Dragging functionality ===============
