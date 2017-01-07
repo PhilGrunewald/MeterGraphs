@@ -78,7 +78,7 @@ var margins = {
 }
 var width = {
 	"electricity": 650,
-	"el_reading_boxes": 120
+	"el_reading_boxes": 140 //otherwise text does not fit
 }
 //=================================================================
 
@@ -322,7 +322,8 @@ electricity_graph.on('mousemove', function(d) {
 		 							 .attr("y", y - height.el_reading_boxes)
 									 .attr("width", width.el_reading_boxes)
 									 .attr("height", 20)
-		 el_reading.attr("x", x + 5)
+		 el_reading.attr("x",x + width.el_reading_boxes/2)
+		 						.attr('text-anchor', 'middle')//to appear in the middle of the green box
 							 .attr("y", y - height.el_reading_boxes - 10)
 							 .text(dayOfWeek[this_time.getDay()] +" "+ this_time.getHours() + ":" + ("0" + this_time.getMinutes()).slice(-2) + " - " +data.energy[ind].watt + " Watt")
 })
@@ -641,16 +642,18 @@ var activity_rects = zoom_activities_instances.append('rect')
 											})
 
 //ONLY THE ONE BOX!!! :))))))
-var el_reading_box = activities_zoom_g.append('g').attr('opacity', 0.8); //append to the activity zoom graph so as to see the reading _over_ the activity lines and boxes
+var el_reading_box = activities_zoom_g.append('g').attr('opacity',1); //append to the activity zoom graph so as to see the reading _over_ the activity lines and boxes
 var el_reading_rect = el_reading_box.append('rect')
-							.attr("width", width.el_reading_boxes)
-							.attr("height", height.el_reading_boxes)
-							.attr("fill", 'green');
+							.attr("width", 0)
+							.attr("height", 0)
+							.attr("fill", '#53c653');
 
 var el_reading = el_reading_box.append('text')
 									.attr('dy', '2em')
 									.attr('text-anchor', 'start')
-								  .attr('fill', 'black')
+								  .attr('fill', '#003300')
+									.text("");
+
 
 //.attr("pointer-events", "none") //not important
 
