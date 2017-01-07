@@ -104,6 +104,19 @@ text {
 	font-size: 20px;
 	fill: #666;
 }
+.annotationline {
+    fill: none;
+    stroke: #9c9;
+    stroke-width: 2.5px;
+}
+.annotation {
+  	font-size: 120%;
+    fill: #666;
+}
+.annotation-peak {
+  	font-size: 180%;
+    fill: #f33;
+}
 
 div.tooltip {
   position: absolute;

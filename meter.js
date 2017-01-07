@@ -299,9 +299,9 @@ function create_daylight_dict_LINEAR() {
 											.attr("id", "clip")
 										.append("rect")
 											.attr("x", 0)
-											.attr("y", 0)
+											.attr("y",  -height.spacing)
 											.attr("width", width.electricity)
-											.attr("height", height.zoom);
+											.attr("height", height.zoom + height.spacing);
 
 
 var electricity_graph =  electricity_zoom_g.append('path')
@@ -347,6 +347,46 @@ electricity_graph.on("click", function() {
 		console.log(" and this el. reading: ")
 		console.log(w)
 });
+
+
+//the electricity graph annotations come behind the activities
+valueLine({ lineValue: data.meta.annotations.avg.Watt, label: data.meta.annotations.avg.label })
+valueLine({ lineValue: data.meta.annotations.max.Watt, label: data.meta.annotations.max.label })
+valueLine({ lineValue: data.meta.annotations.min.Watt, label: data.meta.annotations.min.label })
+function valueLine(value){
+  electricity_zoom_g.append('line')
+									    .attr('x1', electricity_zoomScaleX.range()[0])
+									    .attr('y1', electricity_zoomScaleY.range()[1] - electricity_zoomScaleY(value.lineValue))
+									    .attr('x2', electricity_zoomScaleX.range()[1])
+									    .attr('y2', electricity_zoomScaleY.range()[1] - electricity_zoomScaleY(value.lineValue))
+									    .attr('class', 'annotationline');
+  electricity_zoom_g.append('text')
+    .attr('x', electricity_zoomScaleX.range()[1])
+    .attr('y', electricity_zoomScaleY.range()[1] - electricity_zoomScaleY(value.lineValue))
+    .attr('dy', '1em')
+    .attr('text-anchor', 'end')
+    .text(value.label + " (" + value.lineValue + " Watt)")
+    .attr('class', 'annotation');
+}
+
+
+var valuePoints = []
+valuePoints.push({ yPoint: data.meta.annotations.max.Watt, xPoint: d3.time.format("%Y-%m-%d %H:%M:%S").parse(data.meta.annotations.max.dt),  label: "Your peak demand"} );
+valuePoints.push({ yPoint: data.meta.annotations.min.Watt, xPoint: d3.time.format("%Y-%m-%d %H:%M:%S").parse(data.meta.annotations.min.dt),  label: "Your baseload demand"} );
+var myvaluePoints = electricity_zoom_g.selectAll('.rect')
+																		.data(valuePoints)
+																		.enter()
+																		.append('text')
+																		.attr("clip-path", "url(#clip)")
+																		.attr('y', function(d){return electricity_zoomScaleY.range()[1] - electricity_zoomScaleY(d.yPoint);})
+																		.text(function(d){return d.label})
+																		.attr('fill','black')
+																		.attr('dy', '-0.5em')
+																    .attr('text-anchor', 'middle')
+																		.attr('class', 'annotation-peak');
+
+
+
 
   //============ Create activities graph ============
 	process_activities();
@@ -751,7 +791,7 @@ var el_reading = el_reading_box.append('text')
 																					.attr("y", 0)
 																					.attr("height", height.overview)
 																					.attr("opacity", 0)
-																					.attr("width", 600)
+																					.attr("width", width.electricity)
 																					.on('click', function(){
 																						var a = DefineExtent(electricityScaleX.invert(d3.mouse(d3.event.target)[0]));
 																						brush.extent(a);
@@ -768,6 +808,7 @@ var el_reading = el_reading_box.append('text')
 																						.attr('height', function(d){return d.height})
 																						.attr('y', function(d){return d.y})
 																						_.each(my_zoom_labels, function(label){label.transition().duration(1000).attr('x', function(d){return electricity_zoomScaleX(d);})})
+																						electricity_zoom_g.selectAll('.annotation-peak').transition().duration(1000).attr('x', function(d){return electricity_zoomScaleX(d.xPoint);})
 																					})
 
 			activities_g.append("g")
@@ -806,8 +847,8 @@ var el_reading = el_reading_box.append('text')
 				brush(d3.select(".brush")); //Whereas this code somehow does it automatically. But! it lags!!! So use the code above.
 				//my_zoom_labels.attr('x', function(d){return electricity_zoomScaleX(d);})
 				_.each(my_zoom_labels, function(label, index){label.attr('x', function(d){
-					//return (electricity_zoomScaleX(d) + (index == 1)?0:25); })})
 					return electricity_zoomScaleX(d); })})
+				electricity_zoom_g.selectAll('.annotation-peak').attr('x', function(d){return electricity_zoomScaleX(d.xPoint);})
 			}
 
 			//=============== Dragging functionality ===============
@@ -847,10 +888,9 @@ var el_reading = el_reading_box.append('text')
 
 				var end = data.meta.period.end.getTime()
 				var start = data.meta.period.start.getTime()
-
 				if(to > end){
 					var from = end - ( 2 * hhf )
-					var to = end }
+					var to = end}
 
 				if(from < start){
 					var from = start
