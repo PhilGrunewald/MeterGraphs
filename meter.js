@@ -80,6 +80,7 @@ var width = {
 	"electricity": 650,
 	"el_reading_boxes": 140 //otherwise text does not fit
 }
+var annotation_peak_radius = 5;
 //=================================================================
 
 
@@ -301,7 +302,7 @@ function create_daylight_dict_LINEAR() {
 											.attr("x", 0)
 											.attr("y",  -height.spacing)
 											.attr("width", width.electricity)
-											.attr("height", height.zoom + height.spacing);
+											.attr("height", height.zoom + height.spacing + annotation_peak_radius);
 
 
 var electricity_graph =  electricity_zoom_g.append('path')
@@ -350,7 +351,7 @@ electricity_graph.on("click", function() {
 
 
 //the electricity graph annotations come behind the activities
-valueLine({ lineValue: data.meta.annotations.avg.Watt, label: data.meta.annotations.avg.label })
+valueLine({ lineValue: data.meta.annotations.avg.Watt, label: 'Average'})//data.meta.annotations.avg.label })
 valueLine({ lineValue: data.meta.annotations.max.Watt, label: data.meta.annotations.max.label })
 valueLine({ lineValue: data.meta.annotations.min.Watt, label: data.meta.annotations.min.label })
 function valueLine(value){
@@ -372,7 +373,7 @@ function valueLine(value){
 
 var valuePoints = []
 valuePoints.push({ yPoint: data.meta.annotations.max.Watt, xPoint: d3.time.format("%Y-%m-%d %H:%M:%S").parse(data.meta.annotations.max.dt),  label: "Your peak demand"} );
-valuePoints.push({ yPoint: data.meta.annotations.min.Watt, xPoint: d3.time.format("%Y-%m-%d %H:%M:%S").parse(data.meta.annotations.min.dt),  label: "Your baseload demand"} );
+valuePoints.push({ yPoint: data.meta.annotations.min.Watt, xPoint: d3.time.format("%Y-%m-%d %H:%M:%S").parse(data.meta.annotations.min.dt),  label: "Your lowest demand"} );
 var myvaluePoints = electricity_zoom_g.selectAll('.rect')
 																		.data(valuePoints)
 																		.enter()
@@ -380,10 +381,19 @@ var myvaluePoints = electricity_zoom_g.selectAll('.rect')
 																		.attr("clip-path", "url(#clip)")
 																		.attr('y', function(d){return electricity_zoomScaleY.range()[1] - electricity_zoomScaleY(d.yPoint);})
 																		.text(function(d){return d.label})
-																		.attr('fill','black')
 																		.attr('dy', '-0.5em')
 																    .attr('text-anchor', 'middle')
 																		.attr('class', 'annotation-peak');
+
+var myvaluePointsCircles = electricity_zoom_g.selectAll('.circ')
+																							.data(valuePoints)
+																							.enter()
+																							.append('circle')
+																							.attr("clip-path", "url(#clip)")
+																							.attr('cy', function(d){return electricity_zoomScaleY.range()[1] - electricity_zoomScaleY(d.yPoint);})
+																							.attr('cx', function(d){return electricity_zoomScaleX(d.xPoint);})
+																							.attr('r', annotation_peak_radius)
+																							.attr('class', 'annotation-peak-circles');
 
 
 
@@ -809,6 +819,7 @@ var el_reading = el_reading_box.append('text')
 																						.attr('y', function(d){return d.y})
 																						_.each(my_zoom_labels, function(label){label.transition().duration(1000).attr('x', function(d){return electricity_zoomScaleX(d);})})
 																						electricity_zoom_g.selectAll('.annotation-peak').transition().duration(1000).attr('x', function(d){return electricity_zoomScaleX(d.xPoint);})
+																						electricity_zoom_g.selectAll('.annotation-peak-circles').transition().duration(1000).attr('cx', function(d){return electricity_zoomScaleX(d.xPoint);})
 																					})
 
 			activities_g.append("g")
@@ -849,6 +860,7 @@ var el_reading = el_reading_box.append('text')
 				_.each(my_zoom_labels, function(label, index){label.attr('x', function(d){
 					return electricity_zoomScaleX(d); })})
 				electricity_zoom_g.selectAll('.annotation-peak').attr('x', function(d){return electricity_zoomScaleX(d.xPoint);})
+				electricity_zoom_g.selectAll('.annotation-peak-circles').attr('cx', function(d){return electricity_zoomScaleX(d.xPoint);})
 			}
 
 			//=============== Dragging functionality ===============
