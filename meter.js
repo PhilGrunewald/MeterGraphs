@@ -121,8 +121,9 @@ d3.json(apiurl, function(error, json) {
 	electricityScaleX = d3.time.scale()//scaleLinear()
 				.domain(d3.extent(data.energy, function(d) { return d.timestamp }))
 				.range([0, width.electricity]);
-	var electricityScaleY = d3.scaleLinear()
-				.domain(d3.extent(data.energy, function(d) { return d.watt }))
+	electricityScaleY = d3.scaleLinear()
+				.domain([0, d3.max(data.energy, function(d) { return d.watt })])
+				//.domain(d3.extent(data.energy, function(d) { return d.watt }))
 				.range([0, height.overview]);
 	var electricity_area = d3.svg.area()
 															 .x(function(d) { return electricityScaleX(d.timestamp); })
@@ -267,7 +268,8 @@ function create_daylight_dict_LINEAR() {
 				.domain(d3.extent(data.energy, function(d) { return d.timestamp }))
 				.range([0, width.electricity]);
 	var electricity_zoomScaleY = d3.scaleLinear()
-				.domain(d3.extent(data.energy, function(d) { return d.watt }))
+				//.domain(d3.extent(data.energy, function(d) { return d.watt }))
+				.domain([0, d3.max(data.energy, function(d) { return d.watt })])
 				.range([0, height.zoom]);
 	var electricity_zoom_area = d3.svg.area()
 															 .x(function(d) { return electricity_zoomScaleX(d.timestamp); })
