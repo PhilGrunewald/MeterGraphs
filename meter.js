@@ -70,7 +70,7 @@ var height = {
 	"overview": 				80,
 	"activities":       10,
 	"spacing":          60,
-	"zoom":            200,
+	"zoom":            250,
 	"activities_zoom":  20,
 	"activities_bar":		10,
 	"activity": 				 8,
@@ -81,9 +81,12 @@ var height = {
 	"el_reading_boxes": 20
 }
 var margins = {
-	"canvas_left":      40,
+	"canvas_left":      20,
 	"canvas_top":				10,
-	"canvas_right":     10
+	"canvas_right":     10,
+	"zoom_left":				40,
+	"overview_top":			20,
+	"overview_left":		40
 }
 var width = {
 	"electricity": 650,
@@ -107,15 +110,14 @@ d3.json(apiurl, function(error, json) {
 								 .attr('height', 1000)
 								 .attr('transform', 'translate(' + margins.canvas_left + ', ' + margins.canvas_top + ')');
 	var overview = canvas.append('g')
-											 	.attr('transform', 'translate(10, 10)');
+											 	.attr('transform', 'translate(' + margins.overview_left + ', ' + margins.overview_top + ')');
 	var electricity_g = overview.append('g')
-															 .attr('transform', 'translate(10, 10)');
 	var activities_g = overview.append('g')
-															 .attr('transform', 'translate(10, 10)');
+
 	var electricity_zoom_g = canvas.append('g')
-															 		.attr('transform', 'translate(10, 200)');
+															 		.attr('transform', 'translate(' + margins.zoom_left + ', ' + (height.overview + height.spacing + margins.overview_top) + ')');
 	var activities_zoom_g = canvas.append('g')
-															 		.attr('transform', 'translate(10, 200)');
+															 		.attr('transform', 'translate(' + margins.zoom_left + ', ' + (height.overview + height.spacing + margins.overview_top) + ')');
 																	//note that if, instead, this was appended to electricity_zoom_g, then the squares would have appeared behind the electricity area
 
 
@@ -146,7 +148,7 @@ d3.json(apiurl, function(error, json) {
 							 	.attr('d', electricity_area);
 
 								var out = data.timestamps[0].getTime() + 60000;
-								console.log(electricityScaleX(out))
+								//console.log(electricityScaleX(out))
 
 D = create_daylight_dict_LINEAR();
 // DC = create_daylight_colouring_dict(D, scale_x, scale_y){
@@ -330,6 +332,14 @@ var electricity_graph =  electricity_zoom_g.append('path')
 																			 			.attr('class', 'area-energy')
 																						.attr("clip-path", "url(#clip)")
 																			 			.attr('d', electricity_zoom_area)
+
+//label the y axis
+electricity_zoom_g.append('text')
+									.attr('dy', '-0.5em')
+									.attr('dx', '-200')  // to match height.electricity_zoom
+									.attr('text-anchor', 'start')
+									.attr('class', 'energy-y-label')
+									.text(data.meta.labels.y_axis);
 
 //adding the hover_over_el->see_the_watt_value functionality
 var bisectDate = d3.bisector(function(d) { return d.timestamp }).left;
@@ -830,8 +840,8 @@ var el_reading = el_reading_box.append('text')
 																						electricity_zoom_g.select(".area-energy").transition().duration(1000).attr("d", electricity_zoom_area);
 																						activity_rects.transition().duration(1000).attr('x', function(d) { return electricity_zoomScaleX( d.dt_period ) })
 																						brush_opaque.data([brush.extent()[0],brush.extent()[1]])
-																						brush_opaque.select(".brush_opaque").transition().duration(300).attr("x", function(d, i) {return (i == 0) ? electricityScaleX.range()[0] : electricityScaleX(d);}).attr("width", function(d, i) {return (i == 0) ? (electricityScaleX(d) - electricityScaleX.range()[0]) : (electricityScaleX.range()[1] - electricityScaleX(d))})
-																						brush_opaque.select(".brush_opaque_lines").transition().duration(300).attr("x1", function(d) { return electricityScaleX(d) }).attr('x2', function(d, i) { return electricity_zoomScaleX.range()[i] })
+																						brush_opaque.select(".brush_opaque").transition().duration(200).attr("x", function(d, i) {return (i == 0) ? electricityScaleX.range()[0] : electricityScaleX(d);}).attr("width", function(d, i) {return (i == 0) ? (electricityScaleX(d) - electricityScaleX.range()[0]) : (electricityScaleX.range()[1] - electricityScaleX(d))})
+																						brush_opaque.select(".brush_opaque_lines").transition().duration(200).attr("x1", function(d) { return electricityScaleX(d) }).attr('x2', function(d, i) { return electricity_zoomScaleX.range()[i] })
 																						compute_activity_periods_visuals(act_per_zoom, electricity_zoomScaleX.domain(), "zoom");
 																						myrects.transition().duration(1000).attr('width', function(d){return d.width})
 																						.attr('x', function(d){return d.x})
@@ -876,7 +886,7 @@ var el_reading = el_reading_box.append('text')
 				.attr('y', function(d){return d.y})
 				//!The code below 'manually' sets the LHS of the rectangle associated with the brush to the LHS of it's extent. Works great.
 				d3.select('.brush .extent').attr('x', electricityScaleX(brush.extent()[0]))
-				brush(d3.select(".brush")); //Whereas this code somehow does it automatically. But! it lags!!! So use the code above.
+				//brush(d3.select(".brush")); //Whereas this code somehow does it automatically. But! it lags!!! So use the code above.
 				//my_zoom_labels.attr('x', function(d){return electricity_zoomScaleX(d);})
 				_.each(my_zoom_labels, function(label, index){label.attr('x', function(d){
 					return electricity_zoomScaleX(d); })})
