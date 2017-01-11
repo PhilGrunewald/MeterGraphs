@@ -321,12 +321,12 @@ function create_daylight_dict_LINEAR() {
 	electricity_zoom_g.append("clipPath")
 											.attr("id", "clip")
 										.append("rect")
-										.attr('class', 'temp')
 											.attr("x", 0)
 											.attr("y",  -height.spacing)
 											.attr("width", width.electricity)
 											.attr("height", height.zoom + height.spacing + annotation_peak_radius);
 
+var draggable_area = electricity_zoom_g.append('rect').attr('opacity', 0).attr('x', 0).attr('y', 0).attr('width', width.electricity).attr('height', height.zoom);
 
 var electricity_graph =  electricity_zoom_g.append('path')
 																			 			.datum(data.energy)
@@ -921,12 +921,12 @@ var el_reading = el_reading_box.append('text')
 				}
 				x0 = x;
 			}
-
 			//either:
 			//electricity_zoom_g.call(drag); //this means that ONLY if you click on the electricity area..
 			//or:
-			electricity_zoom_g.append('rect').attr('opacity', 0).attr('x', 0).attr('y', 0).attr('width', width.electricity).attr('height', height.zoom).call(drag); //this is effective if you click anywhere OUTSIDE the activity lines
-			//============================================================
+			draggable_area.call(drag); //on anything that is not activity bars
+
+//============================================================
 
 			function DefineExtent(timestamp) {
 				// return 'from to' positions for brush to fit around the timestamp
