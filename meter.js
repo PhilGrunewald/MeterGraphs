@@ -53,6 +53,15 @@ var data = {
 
 		if((this.meta.period.readings - (this.meta.period.range)) != 0){
 			console.log("Range of time and Bins of data do NOT match")
+			var initial_timestamp = this.timestamps[0];
+			var one_minute_interval = 60000;
+			gaps = [];
+			for (var i = 1; i < this.timestamps.length; i++) {
+				if ((this.timestamps[i] - this.timestamps[i-1]) != one_minute_interval) {
+					gaps.push({'start':this.timestamps[i-1],
+					 					 'end':this.timestamps[i]});
+				}
+			}
 		}
 	}
 }
@@ -136,8 +145,17 @@ d3.json(apiurl, function(error, json) {
 							 	.attr('class', 'area-energy')
 							 	.attr('d', electricity_area);
 
+								var out = data.timestamps[0].getTime() + 60000;
+								console.log(electricityScaleX(out))
 
 D = create_daylight_dict_LINEAR();
+// DC = create_daylight_colouring_dict(D, scale_x, scale_y){
+// 	var t1, t2, minute = 60000;
+// 	t1 = scale_x.domain()[0];
+// 	t2 = t1 + minute;
+// 	while(t)
+// }
+
 function daylight_rect(d, scaleX, scaleY, width) {
  	return [{x:scaleX(d.timestamp), y:0}, {x:scaleX(d.timestamp), y:(scaleY.range()[1] - scaleY(d.watt))}, {x:(scaleX(d.timestamp)+width), y:(scaleY.range()[1] - scaleY(d.watt))}, {x:(scaleX(d.timestamp)+width), y:0}]
 }
@@ -829,8 +847,9 @@ var el_reading = el_reading_box.append('text')
 									 .call(brush)
 									 .selectAll("rect")
 									 .attr('id', 'mybrush')
-										.attr("y", -6)
-										.attr("height", height.overview + 7)
+									 .style('stroke', 'grey')
+										.attr("y", -1)//6)
+										.attr("height", height.overview + 1)
 			brushed(); //so that the zoomed in plot shows the initial zoomed in area
 
 			function brushed() {
