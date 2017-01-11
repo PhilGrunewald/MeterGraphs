@@ -321,6 +321,7 @@ function create_daylight_dict_LINEAR() {
 	electricity_zoom_g.append("clipPath")
 											.attr("id", "clip")
 										.append("rect")
+										.attr('class', 'temp')
 											.attr("x", 0)
 											.attr("y",  -height.spacing)
 											.attr("width", width.electricity)
@@ -920,7 +921,11 @@ var el_reading = el_reading_box.append('text')
 				}
 				x0 = x;
 			}
-			electricity_zoom_g.call(drag); //this means that ONLY if you click on the electricity area..
+
+			//either:
+			//electricity_zoom_g.call(drag); //this means that ONLY if you click on the electricity area..
+			//or:
+			electricity_zoom_g.append('rect').attr('opacity', 0).attr('x', 0).attr('y', 0).attr('width', width.electricity).attr('height', height.zoom).call(drag); //this is effective if you click anywhere OUTSIDE the activity lines
 			//============================================================
 
 			function DefineExtent(timestamp) {
