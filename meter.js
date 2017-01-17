@@ -93,6 +93,10 @@ var width = {
 	"el_reading_boxes": 140 //otherwise text does not fit
 }
 var annotation_peak_radius = 5;
+var original_colour_scheme = ['#cec', '#cea', '#eda', '#eec', '#ace', '#000'];
+//var alternative_colour_scheme = ['#66c2a5', '#a6d854', '#fc8d62', '#e78ac3', '#8da0cb', '#404040']; //random scheme
+//var alternative_colour_scheme = ['#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3', '#404040']; //random scheme
+var alternative_colour_scheme = ['#fbb4ae','#b3cde3','#ccebc5','#decbe4','#fed9a6', '#404040']; //random scheme
 //=================================================================
 
 
@@ -136,6 +140,125 @@ d3.json(apiurl, function(error, json) {
 				.domain([0, d3.max(data.energy, function(d) { return d.watt })])
 				//.domain(d3.extent(data.energy, function(d) { return d.watt }))
 				.range([0, height.overview]);
+
+// FIRST draw the background colours; electricity will then OVERLAY it
+reference_time_array = create_reference_time_array(); //indexed by experimental time, value gives reference (absolute wrt 24 hours) time
+daylight = create_daylight_minute_array();
+dd = assign_colour_rectangles(reference_time_array, daylight);
+
+absolute_timescale_X = d3.scaleLinear()
+													.domain([0, reference_time_array.length])
+													.range([0, width.electricity]);
+absolute_timescale_Y = electricityScaleY;
+
+function daylight_rect(d, scaleX, scaleY) {
+ 	return [{x:scaleX(d.start_min), y:scaleY.range()[0]}, {x:scaleX(d.start_min), y:scaleY.range()[1]}, {x:scaleX(d.end_min), y:scaleY.range()[1]}, {x:scaleX(d.end_min), y:scaleY.range()[0]}]
+}
+var lineFunction = d3.svg.line()
+  												.x(function(d) { return d.x; })
+ 													.y(function(d) { return d.y; })
+ 													.interpolate("linear");
+electricity_g.selectAll('.daytime_rects')
+						 .data(dd)
+						 .enter()
+						 .append('path')
+						 .attr('d', function(d){
+							 var myrect = daylight_rect(d, absolute_timescale_X, absolute_timescale_Y);
+							 return lineFunction(myrect)})
+						 .attr("fill", function(d){ return d3.rgb(d.colour[0], d.colour[1], d.colour[2]); })
+						 .attr("stroke", function(d){ return d3.rgb(d.colour[0], d.colour[1], d.colour[2]); }) //!important here!
+
+
+function create_reference_time_array(initial_time, end_time) {
+	//assumes max span is 2 days
+	var initial_time = "17 00",
+			end_time = "21 00",
+			initial_minute = (+initial_time.substr(0,2)*60) + (+initial_time.substr(2,3)),
+			end_minute = (+end_time.substr(0,2)*60) + (+end_time.substr(2,3));
+	var reference_time = [];
+	for (var i = initial_minute; i < 24*60; i++) { reference_time.push(i); }
+	for (var i = 0; i < end_minute; i++) { reference_time.push(i); }
+	return reference_time;
+}
+
+function assign_colour_rectangles(ref_array, daylight_sequence) {
+	//takes a sequence of absolute minutes (our_array = e.g. 1339, 0, 1, 2) and creates a sequence of rectangles defined by daylight colours
+	//daylight_sequence is an array of daylight colour associated with absolute minute given by the index of that colour
+	var out = [];
+	var start_min = 0;
+	var this_colour = daylight_sequence[ref_array[start_min]];
+	for (var i = 1; i < ref_array.length; i++) {
+		if (daylight_sequence[ref_array[i]] != this_colour) {
+			out.push({
+				'start_min':start_min,
+				'end_min':i,
+				'colour':this_colour
+			});
+			start_min = i;
+			this_colour = daylight_sequence[ref_array[i]];
+		} else {
+			if (i == (ref_array.length - 1) ) {
+				out.push({
+					'start_min':start_min,
+					'end_min':i,
+					'colour':this_colour
+				});
+			}
+		}
+	}
+	return out;
+}
+
+function create_daylight_minute_array() {
+	//function returns a 60*24 array of colours, indexed by absolute minutes, starting from midnight
+	var dawn = ['06 00', '08 00'], dusk = ['18 00', '20 00'];
+	var colour_day_time = [235,215,159], colour_night_time = [117, 117, 187];
+
+	//absolute minute
+	var dawn_start = (+dawn[0].substr(0,2)*60) + (+dawn[0].substr(2,3)),
+			dawn_end = (+dawn[1].substr(0,2)*60) + (+dawn[1].substr(2,3)),
+			dusk_start = (+dusk[0].substr(0,2)*60) + (+dusk[0].substr(2,3)),
+			dusk_end = (+dusk[1].substr(0,2)*60) + (+dusk[1].substr(2,3)),
+			dawn_length = dawn_end - dawn_start,
+			dusk_length = dusk_end - dusk_start;
+
+	var range_R = colour_day_time[0] - colour_night_time[0];
+	var range_B = colour_day_time[1] - colour_night_time[1];
+	var range_G = colour_day_time[2] - colour_night_time[2];
+	var num_bits_dawn = dawn_length - 1;
+	var num_bits_dusk = dusk_length - 1;
+	var inc_R_dawn = range_R/num_bits_dawn;
+	var inc_B_dawn = range_B/num_bits_dawn;
+	var inc_G_dawn = range_G/num_bits_dawn;
+	var inc_R_dusk = range_R/num_bits_dusk;
+	var inc_B_dusk = range_B/num_bits_dusk;
+	var inc_G_dusk = range_G/num_bits_dusk;
+
+	var daylight_colours = [];
+	var day_length = 24*60;
+	for (var i = 0; i < dawn_start; i++) { daylight_colours.push(colour_night_time); };
+	for (var i = 0; i < dawn_length; i++) {
+		var new_R = colour_night_time[0] + i*inc_R_dawn;
+		var new_B = colour_night_time[1] + i*inc_B_dawn;
+		var new_G = colour_night_time[2] + i*inc_G_dawn;
+		daylight_colours.push([new_R, new_B, new_G]);
+	};
+	for (var i = 0; i < (dusk_start - dawn_end); i++) { daylight_colours.push(colour_day_time); };
+	for (var i = 0; i < dusk_length; i++) {
+		var new_R = colour_day_time[0] - i*inc_R_dusk;
+		var new_B = colour_day_time[1] - i*inc_B_dusk;
+		var new_G = colour_day_time[2] - i*inc_G_dusk;
+		daylight_colours.push([new_R, new_B, new_G]);
+	};
+	for (var i = 0; i < (24*60 - dusk_end); i++) { daylight_colours.push(colour_night_time); };
+	return daylight_colours;
+}
+
+
+
+
+
+//draw electricity - maybe now should not be making the colour opaque, since then the daylight colour might change it				
 	var electricity_area = d3.svg.area()
 															 .x(function(d) { return electricityScaleX(d.timestamp); })
 															 .y0(function(d) { return electricityScaleY.range()[1] - electricityScaleY(d.watt); })
@@ -146,141 +269,6 @@ d3.json(apiurl, function(error, json) {
 							 .datum(data.energy)
 							 	.attr('class', 'area-energy')
 							 	.attr('d', electricity_area);
-
-								var out = data.timestamps[0].getTime() + 60000;
-								//console.log(electricityScaleX(out))
-
-D = create_daylight_dict_LINEAR();
-// DC = create_daylight_colouring_dict(D, scale_x, scale_y){
-// 	var t1, t2, minute = 60000;
-// 	t1 = scale_x.domain()[0];
-// 	t2 = t1 + minute;
-// 	while(t)
-// }
-
-function daylight_rect(d, scaleX, scaleY, width) {
- 	return [{x:scaleX(d.timestamp), y:0}, {x:scaleX(d.timestamp), y:(scaleY.range()[1] - scaleY(d.watt))}, {x:(scaleX(d.timestamp)+width), y:(scaleY.range()[1] - scaleY(d.watt))}, {x:(scaleX(d.timestamp)+width), y:0}]
-}
-var lineFunction = d3.svg.line()
-  												.x(function(d) { return d.x; })
- 													.y(function(d) { return d.y; })
- 													.interpolate("linear");
-electricity_g.selectAll('.daytime_rects')
-						 .data(data.energy)
-						 .enter()
-						 .append('path')
-						 .attr('d', function(d){
-							 var width = electricityScaleX(data.energy[1].timestamp) - electricityScaleX(data.energy[0].timestamp);
-							 var myrect = daylight_rect(d, electricityScaleX, electricityScaleY, width);
-							 return lineFunction(myrect)})
-						 .attr("fill", function(d){
-							  var format = d3.timeFormat("%H %M");
-								var time = d.timestamp;
-								var t = format(time);
-								var colour = D[t]
-								if (D[t]) {
-									return d3.rgb(colour[0], colour[1], colour[2])
-								} else {
-									return 'white'
-								}
-						 })
-						 .attr("stroke", function(d){
-								var format = d3.timeFormat("%H %M");
-								var time = d.timestamp;
-								var t = format(time);
-								var colour = D[t]
-								if (D[t]) {
-									return d3.rgb(colour[0], colour[1], colour[2])
-								} else {
-									return 'white'
-								}
-
-						 })
-
-
-function create_daylight_dict_LINEAR() {
-	var daylight_dict = {};
-	//Find out how many readings there are between highest_sun and darkest_night
-	var highest_sun = '12 00', darkest_night = '00 00';
-	var day_time = ['08 00', '16 00']
-	var night_time = ['18 00', '06 00']
-	var dawn = [], twilight = [], day = [], night = [];
-	var format = d3.timeFormat("%H %M"); //hour (24) minute
-	var record_dawn = false, record_twilight = false, record_day = false, record_night = false;
-	(data.energy).forEach(function(d) {
-		time = d.timestamp;
-		if (format(time) == day_time[0]){
-			record_dawn = false;
-			record_day = true;
-		}
-		if (format(time) == night_time[0]){
-			record_twilight = false;
-			record_night = true;
-		}
-		if (format(time) == day_time[1]){
-			record_twilight = true;
-			record_day = false;
-		}
-		if (format(time) == night_time[1]){
-			record_dawn = true;
-			record_night = false;
-		}
-		if (record_dawn) {
-			dawn.push(time)
-		}
-		if (record_twilight) {
-			twilight.push(time)
-		}
-		if (record_day) {
-			day.push(time)
-		}
-		if (record_night) {
-			night.push(time)
-		}
-	})
-
-	var colour_day_time = [235,215,159]; //rgb
-	var colour_night_time = [117, 117, 187];
-
-	var range_R = colour_day_time[0] - colour_night_time[0];
-	var range_B = colour_day_time[1] - colour_night_time[1];
-	var range_G = colour_day_time[2] - colour_night_time[2];
-	var num_bits_dawn = dawn.length - 1;
-	var num_bits_twilight = twilight.length - 1;
-	var inc_R_dawn = range_R/num_bits_dawn;
-	var inc_B_dawn = range_B/num_bits_dawn;
-	var inc_G_dawn = range_G/num_bits_dawn;
-	var inc_R_twilight = range_R/num_bits_twilight;
-	var inc_B_twilight = range_B/num_bits_twilight;
-	var inc_G_twilight = range_G/num_bits_twilight;
-
-	dawn.forEach(function(time) {
-		var ind = dawn.indexOf(time);
-		var new_R = colour_night_time[0] + ind*inc_R_dawn;
-		var new_B = colour_night_time[1] + ind*inc_B_dawn;
-		var new_G = colour_night_time[2] + ind*inc_G_dawn;
-		var t = format(time);
-		daylight_dict[t] = [new_R, new_B, new_G]
-	})
-	twilight.forEach(function(time) {
-		var ind = twilight.indexOf(time);
-		var new_R = colour_day_time[0] - ind*inc_R_twilight;
-		var new_B = colour_day_time[1] - ind*inc_B_twilight;
-		var new_G = colour_day_time[2] - ind*inc_G_twilight;
-		var t = format(time);
-		daylight_dict[t] = [new_R, new_B, new_G]
-	})
-	day.forEach(function(time) {
-		var t = format(time);
-		daylight_dict[t] = colour_day_time;
-	})
-	night.forEach(function(time) {
-		var t = format(time);
-		daylight_dict[t] = colour_night_time;
-	})
-
-	return daylight_dict;
-}
 
 
 	//============ Create zoomed electricity area graph ============
@@ -532,6 +520,7 @@ var myvaluePointsCircles = electricity_zoom_g.selectAll('.circ')
 
 
 
+
 //draw activities
 var activities_instances = activities_g.selectAll('activities_instances')
 																	 .data(data.periods)
@@ -539,7 +528,14 @@ var activities_instances = activities_g.selectAll('activities_instances')
 																	 .append('g')
 //deliberately with no hover functionality
 activities_instances.append('rect')
-								.style('fill', function(d,i) { return d.dotcolour })
+								.style('fill', function(d,i) {
+									var ind = original_colour_scheme.indexOf(d.dotcolour);
+									return alternative_colour_scheme[ind];
+									//alternatively:
+									//return original_colour_scheme[ind];
+									//or just:
+									//return d.dotcolour
+								})
 								.attr('width', 10 )
 								.attr('x', function(d) { return electricityScaleX( d.dt_period ) })
 								.attr('height', height.activity)
@@ -695,7 +691,14 @@ function append_labels(location_brief, group, scale) {
 
 //add activity rectanges
 var activity_rects = zoom_activities_instances.append('rect')
-										.style('fill', function(d,i) { return d.dotcolour })
+										.style('fill', function(d,i) {
+											var ind = original_colour_scheme.indexOf(d.dotcolour);
+											return alternative_colour_scheme[ind];
+											//alternatively:
+											//return original_colour_scheme[ind];
+											//or just:
+											//return d.dotcolour
+										})
 										.attr("clip-path", "url(#activities_clip)")
 										.attr('width', 20 )
 										.attr('x', function(d) { return electricity_zoomScaleX( d.dt_period ) })
@@ -706,21 +709,56 @@ var activity_rects = zoom_activities_instances.append('rect')
 										} )
 										.attr("rx", 3)
 										.attr("ry", 3)
-										.on("mouseover", function(d) {
-											tooltip.transition()
-											.duration(200)
-											.style("visibility", "visible")
-											.style("opacity", .9);
-											tooltip.html(toolbox_label(d))
-											.style("left", (d3.event.pageX + 5) + "px")
-											.style("top", (d3.event.pageY - 28) + "px")
-											})
-										.on("mouseout", function(d) {
-											tooltip.transition()
-											.duration(1500)
-											.style("opacity", 0)
-											.style("border", "none")
-											})
+										// .on("mouseover", function(d) {
+										// 	tooltip.transition()
+										// 	.duration(200)
+										// 	.style("visibility", "visible")
+										// 	.style("opacity", .9);
+										// 	tooltip.html(toolbox_label(d))
+										// 	.style("left", (d3.event.pageX + 5) + "px")
+										// 	.style("top", (d3.event.pageY - 28) + "px")
+										// 	})
+										// .on("mouseout", function(d) {
+										// 	tooltip.transition()
+										// 	.duration(1500)
+										// 	.style("opacity", 0)
+										// 	.style("border", "none")
+										// 	})
+
+//enjoyment icons on activity boxes
+var enjoyment_icons = zoom_activities_instances.append('image')
+								.attr("clip-path", "url(#activities_clip)")
+								.attr("xlink:href", function(d) {
+									var out = "img/enjoy_" + ((d.activities[0].enjoyment!='undefined')?d.activities[0].enjoyment:"0") + ".png";
+									return out;
+								})
+                .attr("x", function(d) { return electricity_zoomScaleX( d.dt_period ) })
+                .attr("y", function(d) {
+									var ind = data.meta.users.indexOf(d.idMeta);
+									return ind*(height.activities_bar_zoom + height.activities_bar_spacing_zoom) - 3;
+								} )
+                .attr("width", '20')
+                .attr("height", '20')
+								.on("mouseover", function(d) {
+									tooltip.transition()
+									.duration(200)
+									.style("visibility", "visible")
+									.style("opacity", .9);
+									tooltip.html(toolbox_label(d))
+									.style("left", (d3.event.pageX + 5) + "px")
+									.style("top", (d3.event.pageY - 28) + "px")
+									})
+								.on("mouseout", function(d) {
+									tooltip.transition()
+									.duration(1500)
+									.style("opacity", 0)
+									.style("border", "none")
+									})
+
+
+
+
+
 
 //ONLY THE ONE BOX!!! :))))))
 var el_reading_box = activities_zoom_g.append('g').attr('opacity',1); //append to the activity zoom graph so as to see the reading _over_ the activity lines and boxes
@@ -851,6 +889,7 @@ var el_reading = el_reading_box.append('text')
 																						_.each(my_zoom_labels, function(label){label.transition().duration(1000).attr('x', function(d){return electricity_zoomScaleX(d);})})
 																						electricity_zoom_g.selectAll('.annotation-peak').transition().duration(1000).attr('x', function(d){return electricity_zoomScaleX(d.xPoint);})
 																						electricity_zoom_g.selectAll('.annotation-peak-circles').transition().duration(1000).attr('cx', function(d){return electricity_zoomScaleX(d.xPoint);})
+																						enjoyment_icons.transition().duration(1000).attr('x', function(d) { return electricity_zoomScaleX( d.dt_period ) })
 																					})
 
 			activities_g.append("g")
@@ -867,6 +906,7 @@ var el_reading = el_reading_box.append('text')
 				electricity_zoomScaleX.domain(brush.empty() ? electricityScaleX.domain() : brush.extent());
 				electricity_zoom_g.select(".area-energy").attr("d", electricity_zoom_area);
 				activity_rects.attr('x', function(d) { return electricity_zoomScaleX( d.dt_period ) })
+				enjoyment_icons.attr('x', function(d) { return electricity_zoomScaleX( d.dt_period ) })
 				brush_opaque.data([brush.extent()[0],brush.extent()[1]]);
 				brush_opaque.select(".brush_opaque").attr("x", function(d, i) {
 										 return (i == 0) ? electricityScaleX.range()[0] : electricityScaleX(d);

@@ -13,7 +13,7 @@ svg {
 .area-energy {
   fill: #9c9;
   stroke: none;
-  opacity: 0.8;
+  opacity: 0.9;
   clip-path: url(#clip);
 }
 
@@ -65,7 +65,8 @@ svg {
 }
 
 .home {
-  fill: #F8F8F8;
+  /*fill: #F8F8F8;*/
+  fill: #9c9;
   fill-opacity: .5;
 }
 .away {
