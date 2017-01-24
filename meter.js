@@ -128,137 +128,186 @@ d3.json(apiurl, function(error, json) {
 
 
 
+// ============ select extent for the x axis
+//use selection_method = 1 for automatic selection. Automatic selection tries to
+//make electricity the master (allowing for the margins related to activity boxes);
+//It lists activities with el. extent, finds their margins, and makes sure those margins are covered by the resulting range
+//Also, if there are no electricity readings, makes activity (with margins) the master instead.
+//use selection_method = 2 to set the extent of the x axis as max(electricity_extent, activity_extent with margins)
+//use selection_method = 3 to impose el. extent (as above)
+//use selection_method = 4 to impose activity extent (with margins)
+var selection_method = 1;
 
+var electricity_minimum_reading = 10; //will still use ALL readings to get min/max/av el stats
+//NB: currently the y axis is designed to start from 0, rather than some min. el value. Which means readings below the minimum
+//as defined above might still be shown.
+//EITHER: choose one EXTENT, and whether value lines are drawn
+//extent = get_electricity_measurement_time_extent();
+//extent = get_above_min_electricity_extent(electricity_minimum_reading);
+//extent = get_activity_extent();
+//var draw_value_lines = true;//min etc. lines drawn
+//OR:
+var draw_value_lines = false; //lines of min/max/av values, with annotations
+var draw_value_points = false; //min/max points with annotations
+extent = set_master(selection_method, electricity_minimum_reading);
 
-
-
-	//============ Create electricity area graph ============
-	electricityScaleX = d3.time.scale()//scaleLinear()
-				.domain(d3.extent(data.energy, function(d) { return d.timestamp }))
-				.range([0, width.electricity]);
-	electricityScaleY = d3.scaleLinear()
-				.domain([0, d3.max(data.energy, function(d) { return d.watt })])
-				//.domain(d3.extent(data.energy, function(d) { return d.watt }))
-				.range([0, height.overview]);
-
-// FIRST draw the background colours; electricity will then OVERLAY it
-reference_time_array = create_reference_time_array(); //indexed by experimental time, value gives reference (absolute wrt 24 hours) time
-daylight = create_daylight_minute_array();
-dd = assign_colour_rectangles(reference_time_array, daylight);
-
-absolute_timescale_X = d3.scaleLinear()
-													.domain([0, reference_time_array.length])
-													.range([0, width.electricity]);
-absolute_timescale_Y = electricityScaleY;
-
-function daylight_rect(d, scaleX, scaleY) {
- 	return [{x:scaleX(d.start_min), y:scaleY.range()[0]}, {x:scaleX(d.start_min), y:scaleY.range()[1]}, {x:scaleX(d.end_min), y:scaleY.range()[1]}, {x:scaleX(d.end_min), y:scaleY.range()[0]}]
+//related functions
+function get_activity_extent() {
+	//activity extent is not just [time_first_act, time_last_act], but
+	//[time_first_act-10min, time_last_act+30min], to allow for rectangles to fit properly in the plot
+	var act_times = [];
+	_.each(data.users, function(user) {
+		_.each(user.activities, function(act) {
+			act_times.push(act.dt_activity);
+		})
+	})
+	var ext = d3.extent(act_times);
+	return ext;
 }
-var lineFunction = d3.svg.line()
-  												.x(function(d) { return d.x; })
- 													.y(function(d) { return d.y; })
- 													.interpolate("linear");
-electricity_g.selectAll('.daytime_rects')
-						 .data(dd)
-						 .enter()
-						 .append('path')
-						 .attr('d', function(d){
-							 var myrect = daylight_rect(d, absolute_timescale_X, absolute_timescale_Y);
-							 return lineFunction(myrect)})
-						 .attr("fill", function(d){ return d3.rgb(d.colour[0], d.colour[1], d.colour[2]); })
-						 .attr("stroke", function(d){ return d3.rgb(d.colour[0], d.colour[1], d.colour[2]); }) //!important here!
-
-
-function create_reference_time_array(initial_time, end_time) {
-	//assumes max span is 2 days
-	var initial_time = "17 00",
-			end_time = "21 00",
-			initial_minute = (+initial_time.substr(0,2)*60) + (+initial_time.substr(2,3)),
-			end_minute = (+end_time.substr(0,2)*60) + (+end_time.substr(2,3));
-	var reference_time = [];
-	for (var i = initial_minute; i < 24*60; i++) { reference_time.push(i); }
-	for (var i = 0; i < end_minute; i++) { reference_time.push(i); }
-	return reference_time;
+function get_activity_extent_with_extra_padding_within_boundaries(bounding_extent) {
+	//activity extent is not just [time_first_act, time_last_act], but
+	//[time_first_act-10min, time_last_act+30min], to allow for rectangles to fit properly in the plot
+	var act_times = [];
+	var bounding_min = bounding_extent[0].getTime(),
+			bounding_max = bounding_extent[1].getTime();
+	_.each(data.users, function(user) {
+		_.each(user.activities, function(act) {
+			if (act.dt_activity.getTime() <= bounding_max && act.dt_activity.getTime() >= bounding_min) {
+				act_times.push(act.dt_activity);
+			}
+		})
+	})
+	if (act_times) {
+		var ext = d3.extent(act_times);
+		var milliseconds_final = ext[1].getTime() + 30*60*1000; //extend time window 30 min to right and 10 min to left
+		var milliseconds_initial = ext[0].getTime() - 10*60*1000;
+		var time_initial = new Date(milliseconds_initial);
+		var time_final = new Date(milliseconds_final);
+		return [time_initial, time_final];
+	} else {
+		return false;
+	}
 }
-
-function assign_colour_rectangles(ref_array, daylight_sequence) {
-	//takes a sequence of absolute minutes (our_array = e.g. 1339, 0, 1, 2) and creates a sequence of rectangles defined by daylight colours
-	//daylight_sequence is an array of daylight colour associated with absolute minute given by the index of that colour
-	var out = [];
-	var start_min = 0;
-	var this_colour = daylight_sequence[ref_array[start_min]];
-	for (var i = 1; i < ref_array.length; i++) {
-		if (daylight_sequence[ref_array[i]] != this_colour) {
-			out.push({
-				'start_min':start_min,
-				'end_min':i,
-				'colour':this_colour
-			});
-			start_min = i;
-			this_colour = daylight_sequence[ref_array[i]];
-		} else {
-			if (i == (ref_array.length - 1) ) {
-				out.push({
-					'start_min':start_min,
-					'end_min':i,
-					'colour':this_colour
-				});
+function get_activity_extent_with_extra_padding() {
+	//activity extent is not just [time_first_act, time_last_act], but
+	//[time_first_act-10min, time_last_act+30min], to allow for rectangles to fit properly in the plot
+	var act_times = [];
+	_.each(data.users, function(user) {
+		_.each(user.activities, function(act) {
+			act_times.push(act.dt_activity);
+		})
+	})
+	if (act_times.length>0) {
+		var ext = d3.extent(act_times);
+		var milliseconds_final = ext[1].getTime() + 30*60*1000; //extend time window 30 min to right and 10 min to left
+		var milliseconds_initial = ext[0].getTime() - 10*60*1000;
+		var time_initial = new Date(milliseconds_initial);
+		var time_final = new Date(milliseconds_final);
+		return [time_initial, time_final];
+	} else {
+		return false;
+	}
+}
+function get_electricity_measurement_time_extent() {
+	return d3.extent(data.energy, function(d) { return d.timestamp });
+}
+function get_above_min_electricity_extent(el_min) {
+	return d3.extent(data.energy, function(d) {
+		if (d.watt > el_min) {return d.timestamp }
+	})
+}
+function set_master(method, el_min){
+	var extent_out, extent_el, extent_act;
+	//Find out what data there is
+	var el_exists = false, act_exists = false;
+	if(data.meta.period.readings > 0) {
+		//extent_out = get_electricity_measurement_time_extent(); //or:
+		extent_el = get_above_min_electricity_extent(el_min);
+		if ( (extent_el[1]-extent_el[0]) > 0) {el_exists = true;}
+	}
+	if (el_exists) {
+		draw_value_lines = true;
+		draw_value_points = true; //however, they will only be drawn if they are in the extent
+		if (method == 1) {
+			console.log("Abscissa extent defined by electricity readings, modified to include activities boxes.");
+			//use this look for activities within (el_min - 1 min, el_max)
+			temp_extent_el = [new Date(extent_el[0].getTime() - 60*1000), extent_el[1]]; //since electricity for some starts being recorded at 17:01..
+			//or, just use el_extent:
+			//var temp_extent_el = extent_el;
+			var extent_act = get_activity_extent_with_extra_padding_within_boundaries(temp_extent_el);
+			if (extent_act) { //if there are some activities
+				extent_el[0] = (extent_el[0].getTime()<extent_act[0].getTime())?extent_el[0]:extent_act[0];
+				extent_el[1] = (extent_el[1].getTime()>extent_act[1].getTime())?extent_el[1]:extent_act[1];
+				extent_out = extent_el;
+			} else {
+				console.log("No activities recorded.");
+				extent_out = extent_el;
 			}
 		}
+		if (method == 2) { //include everything
+			console.log("Abscissa extent defined as to include both the electricity readings and the activities.");
+			extent_act = get_activity_extent_with_extra_padding();
+			if (extent_act != false) {
+				extent_act[0] = (extent_act[0].getTime()<extent_el[0].getTime())?extent_act[0]:extent_el[0];
+				extent_act[1] = (extent_act[1].getTime()>extent_el[1].getTime())?extent_act[1]:extent_el[1];
+				extent_out = extent_act;
+			} else {
+				console.log("No activities recorded.");
+				extent_out = extent_el;
+			}
+		}
+		if (method == 3) {
+			console.log("Abscissa extent defined by electricity readings.");
+			extent_out = extent_el;
+		}
+		if (method == 4) {
+			console.log("Abscissa extent defined by activities.");
+			extent_act = get_activity_extent_with_extra_padding();
+			if (extent_act) {
+				extent_out = extent_act;
+			} else {
+				console.log("Not possible. Abscissa defined by electricity readings.");
+				extent_out = extent_el;
+			}
+		}
+	} else {
+		extent_out = get_activity_extent_with_extra_padding();
+		if (extent_out == false) {
+			console.log("Nothing to plot: neither activities nor electricity readinds found.");
+			return 0;
+		}
 	}
-	return out;
+	return extent_out;
 }
 
-function create_daylight_minute_array() {
-	//function returns a 60*24 array of colours, indexed by absolute minutes, starting from midnight
-	var dawn = ['06 00', '08 00'], dusk = ['18 00', '20 00'];
-	var colour_day_time = [235,215,159], colour_night_time = [117, 117, 187];
+//=========================================
 
-	//absolute minute
-	var dawn_start = (+dawn[0].substr(0,2)*60) + (+dawn[0].substr(2,3)),
-			dawn_end = (+dawn[1].substr(0,2)*60) + (+dawn[1].substr(2,3)),
-			dusk_start = (+dusk[0].substr(0,2)*60) + (+dusk[0].substr(2,3)),
-			dusk_end = (+dusk[1].substr(0,2)*60) + (+dusk[1].substr(2,3)),
-			dawn_length = dawn_end - dawn_start,
-			dusk_length = dusk_end - dusk_start;
 
-	var range_R = colour_day_time[0] - colour_night_time[0];
-	var range_B = colour_day_time[1] - colour_night_time[1];
-	var range_G = colour_day_time[2] - colour_night_time[2];
-	var num_bits_dawn = dawn_length - 1;
-	var num_bits_dusk = dusk_length - 1;
-	var inc_R_dawn = range_R/num_bits_dawn;
-	var inc_B_dawn = range_B/num_bits_dawn;
-	var inc_G_dawn = range_G/num_bits_dawn;
-	var inc_R_dusk = range_R/num_bits_dusk;
-	var inc_B_dusk = range_B/num_bits_dusk;
-	var inc_G_dusk = range_G/num_bits_dusk;
+//============ Create electricity area graph ============
+//technically these should be called the overview scales
+electricityScaleX = d3.time.scale()//scaleLinear()
+			.domain(extent)
+			.range([0, width.electricity]);
+electricityScaleY = d3.scaleLinear()
+			.domain([0, d3.max(data.energy, function(d) { return d.watt })])
+			//.domain(d3.extent(data.energy, function(d) { return d.watt }))
+			.range([0, height.overview]);
 
-	var daylight_colours = [];
-	var day_length = 24*60;
-	for (var i = 0; i < dawn_start; i++) { daylight_colours.push(colour_night_time); };
-	for (var i = 0; i < dawn_length; i++) {
-		var new_R = colour_night_time[0] + i*inc_R_dawn;
-		var new_B = colour_night_time[1] + i*inc_B_dawn;
-		var new_G = colour_night_time[2] + i*inc_G_dawn;
-		daylight_colours.push([new_R, new_B, new_G]);
-	};
-	for (var i = 0; i < (dusk_start - dawn_end); i++) { daylight_colours.push(colour_day_time); };
-	for (var i = 0; i < dusk_length; i++) {
-		var new_R = colour_day_time[0] - i*inc_R_dusk;
-		var new_B = colour_day_time[1] - i*inc_B_dusk;
-		var new_G = colour_day_time[2] - i*inc_G_dusk;
-		daylight_colours.push([new_R, new_B, new_G]);
-	};
-	for (var i = 0; i < (24*60 - dusk_end); i++) { daylight_colours.push(colour_night_time); };
-	return daylight_colours;
-}
+
+// FIRST draw the background colours; electricity will then OVERLAY it
+//a rectangle showing colour of day during the hours of the experiment (which is assumed to end the following day)
+f = d3.time.format("%H %M");
+colour_background({
+	'experiment_start_time':f(extent[0]),
+	'experiment_end_time':f(extent[1]),
+	'width': width.electricity,
+	'height':height.overview,
+	'where':electricity_g
+});
 
 
 
-
-
-//draw electricity - maybe now should not be making the colour opaque, since then the daylight colour might change it				
+//draw electricity - maybe now should not be making the colour opaque, since then the daylight colour might change it
 	var electricity_area = d3.svg.area()
 															 .x(function(d) { return electricityScaleX(d.timestamp); })
 															 .y0(function(d) { return electricityScaleY.range()[1] - electricityScaleY(d.watt); })
@@ -273,9 +322,9 @@ function create_daylight_minute_array() {
 
 	//============ Create zoomed electricity area graph ============
 	electricity_zoomScaleX = d3.time.scale()//scaleLinear()
-				.domain(d3.extent(data.energy, function(d) { return d.timestamp }))
+				.domain(extent)
 				.range([0, width.electricity]);
-	var electricity_zoomScaleY = d3.scaleLinear()
+	electricity_zoomScaleY = d3.scaleLinear()
 				//.domain(d3.extent(data.energy, function(d) { return d.watt }))
 				.domain([0, d3.max(data.energy, function(d) { return d.watt })])
 				.range([0, height.zoom]);
@@ -374,46 +423,70 @@ valueLine({ lineValue: data.meta.annotations.avg.Watt, label: 'Average'})//data.
 valueLine({ lineValue: data.meta.annotations.max.Watt, label: data.meta.annotations.max.label })
 valueLine({ lineValue: data.meta.annotations.min.Watt, label: data.meta.annotations.min.label })
 function valueLine(value){
-  electricity_zoom_g.append('line')
-									    .attr('x1', electricity_zoomScaleX.range()[0])
-									    .attr('y1', electricity_zoomScaleY.range()[1] - electricity_zoomScaleY(value.lineValue))
-									    .attr('x2', electricity_zoomScaleX.range()[1])
-									    .attr('y2', electricity_zoomScaleY.range()[1] - electricity_zoomScaleY(value.lineValue))
-									    .attr('class', 'annotationline');
-  electricity_zoom_g.append('text')
-    .attr('x', electricity_zoomScaleX.range()[1])
-    .attr('y', electricity_zoomScaleY.range()[1] - electricity_zoomScaleY(value.lineValue))
-    .attr('dy', '1em')
-    .attr('text-anchor', 'end')
-    .text(value.label + " (" + value.lineValue + " Watt)")
-    .attr('class', 'annotation');
+	if(draw_value_lines) {
+		//have to compute it again here, since json appears to erroneously pass on a too-high value
+		if (value.label == "Peak") {
+			value.lineValue = d3.max(data.energy, function(d) {return d.watt});
+		}
+		if ( (value.lineValue <= electricity_zoomScaleY.domain()[1]) && (value.lineValue >= electricity_zoomScaleY.domain()[0]) ) {
+			electricity_zoom_g.append('line')
+													.attr('x1', electricity_zoomScaleX.range()[0])
+													.attr('y1', electricity_zoomScaleY.range()[1] - electricity_zoomScaleY(value.lineValue))
+													.attr('x2', electricity_zoomScaleX.range()[1])
+													.attr('y2', electricity_zoomScaleY.range()[1] - electricity_zoomScaleY(value.lineValue))
+													.attr('class', 'annotationline');
+			electricity_zoom_g.append('text')
+				.attr('x', electricity_zoomScaleX.range()[1])
+				.attr('y', electricity_zoomScaleY.range()[1] - electricity_zoomScaleY(value.lineValue))
+				.attr('dy', '1em')
+				.attr('text-anchor', 'end')
+				.text(value.label + " (" + value.lineValue + " Watt)")
+				.attr('class', 'annotation');
+
+		}
+	}
+
 }
 
+electricity_zoom_g.append("clipPath")
+										.attr("id", "clip_annotations")
+									.append("rect")
+										.attr("x", -80)
+										.attr("y",  -height.spacing)
+										.attr("width", width.electricity + 160)
+										.attr("height", height.zoom + height.spacing + annotation_peak_radius);
 
 var valuePoints = []
 valuePoints.push({ yPoint: data.meta.annotations.max.Watt, xPoint: d3.time.format("%Y-%m-%d %H:%M:%S").parse(data.meta.annotations.max.dt),  label: "Your peak demand"} );
 valuePoints.push({ yPoint: data.meta.annotations.min.Watt, xPoint: d3.time.format("%Y-%m-%d %H:%M:%S").parse(data.meta.annotations.min.dt),  label: "Your lowest demand"} );
-var myvaluePoints = electricity_zoom_g.selectAll('.rect')
-																		.data(valuePoints)
-																		.enter()
-																		.append('text')
-																		.attr("clip-path", "url(#clip)")
-																		.attr('y', function(d){return electricity_zoomScaleY.range()[1] - electricity_zoomScaleY(d.yPoint);})
-																		.text(function(d){return d.label})
-																		.attr('dy', '-0.5em')
-																    .attr('text-anchor', 'middle')
-																		.attr('class', 'annotation-peak');
+if (draw_value_points) {
+	var myvaluePoints = electricity_zoom_g.selectAll('.rect')
+																			.data(valuePoints)
+																			.enter()
+																			.append('text')
+																			.attr("clip-path", "url(#clip_annotations)")
+																			.attr('y', function(d){return electricity_zoomScaleY.range()[1] - electricity_zoomScaleY(d.yPoint);})
+																			.text(function(d){
+																				//only make the text appear if the actual point is within the zoomed window
+																				if (d.xPoint < electricity_zoomScaleX.domain()[1]  &&
+																				d.xPoint > electricity_zoomScaleX.domain()[0]) {
+																					return d.label;
+																				} else {return "";}
+																			})
+																			.attr('dy', '-0.5em')
+																	    .attr('text-anchor', 'middle')
+																			.attr('class', 'annotation-peak');
 
-var myvaluePointsCircles = electricity_zoom_g.selectAll('.circ')
-																							.data(valuePoints)
-																							.enter()
-																							.append('circle')
-																							.attr("clip-path", "url(#clip)")
-																							.attr('cy', function(d){return electricity_zoomScaleY.range()[1] - electricity_zoomScaleY(d.yPoint);})
-																							.attr('cx', function(d){return electricity_zoomScaleX(d.xPoint);})
-																							.attr('r', annotation_peak_radius)
-																							.attr('class', 'annotation-peak-circles');
-
+	var myvaluePointsCircles = electricity_zoom_g.selectAll('.circ')
+																								.data(valuePoints)
+																								.enter()
+																								.append('circle')
+																								.attr("clip-path", "url(#clip)")
+																								.attr('cy', function(d){return electricity_zoomScaleY.range()[1] - electricity_zoomScaleY(d.yPoint);})
+																								.attr('cx', function(d){return electricity_zoomScaleX(d.xPoint);})
+																								.attr('r', annotation_peak_radius)
+																								.attr('class', 'annotation-peak-circles');
+}
 
 
 
@@ -424,13 +497,13 @@ var myvaluePointsCircles = electricity_zoom_g.selectAll('.circ')
 		var periods = {}
 		_.each(data.users, function(user){
 			_.each(user.activities,function(act){
-				if((act.dt_activity > electricityScaleX.domain()[0]) && (act.dt_activity < electricityScaleX.domain()[1])){
-					var bin = act.period+'_'+act.idMeta
+				if((act.dt_activity >= electricityScaleX.domain()[0]) && (act.dt_activity <= electricityScaleX.domain()[1])){
+					var bin = act.period+'_'+act.idMeta;
 					if(!periods.hasOwnProperty(bin)) periods[bin] = {
 						"dt_period": act.dt_period,
 						"idMeta": act.idMeta,
 						"dotcolour": act.dotcolour,
-						"activities": []}
+						"activities": []	}
 					data.activities.push(act)
 					periods[bin].activities.push(act)
 					}
@@ -526,6 +599,7 @@ var activities_instances = activities_g.selectAll('activities_instances')
 																	 .data(data.periods)
 																	 .enter()
 																	 .append('g')
+
 //deliberately with no hover functionality
 activities_instances.append('rect')
 								.style('fill', function(d,i) {
@@ -537,7 +611,7 @@ activities_instances.append('rect')
 									//return d.dotcolour
 								})
 								.attr('width', 10 )
-								.attr('x', function(d) { return electricityScaleX( d.dt_period ) })
+								.attr('x', function(d) {return electricityScaleX( d.dt_period ) })
 								.attr('height', height.activity)
 								.attr('y', function(d) {
 									var ind = data.meta.users.indexOf(d.idMeta);
@@ -701,7 +775,11 @@ var activity_rects = zoom_activities_instances.append('rect')
 										})
 										.attr("clip-path", "url(#activities_clip)")
 										.attr('width', 20 )
-										.attr('x', function(d) { return electricity_zoomScaleX( d.dt_period ) })
+										.attr('x', function(d) {
+											if (d.dt_period == electricity_zoomScaleX.domain()[1]) {
+												return electricity_zoomScaleX( d.dt_period ) - 20;
+											}
+											return electricity_zoomScaleX( d.dt_period ) })
 										.attr('height', height.activity_zoom)
 										.attr('y', function(d) {
 											var ind = data.meta.users.indexOf(d.idMeta);
@@ -888,6 +966,13 @@ var el_reading = el_reading_box.append('text')
 																						.attr('y', function(d){return d.y})
 																						_.each(my_zoom_labels, function(label){label.transition().duration(1000).attr('x', function(d){return electricity_zoomScaleX(d);})})
 																						electricity_zoom_g.selectAll('.annotation-peak').transition().duration(1000).attr('x', function(d){return electricity_zoomScaleX(d.xPoint);})
+																						.text(function(d){
+																							//only make the text appear if the actual point is within the zoomed window
+																							if (d.xPoint < electricity_zoomScaleX.domain()[1]  &&
+																							d.xPoint > electricity_zoomScaleX.domain()[0]) {
+																								return d.label;
+																							} else {return "";}
+																						})
 																						electricity_zoom_g.selectAll('.annotation-peak-circles').transition().duration(1000).attr('cx', function(d){return electricity_zoomScaleX(d.xPoint);})
 																						enjoyment_icons.transition().duration(1000).attr('x', function(d) { return electricity_zoomScaleX( d.dt_period ) })
 																					})
@@ -932,6 +1017,13 @@ var el_reading = el_reading_box.append('text')
 				_.each(my_zoom_labels, function(label, index){label.attr('x', function(d){
 					return electricity_zoomScaleX(d); })})
 				electricity_zoom_g.selectAll('.annotation-peak').attr('x', function(d){return electricity_zoomScaleX(d.xPoint);})
+				.text(function(d){
+					//only make the text appear if the actual point is within the zoomed window
+					if (d.xPoint < electricity_zoomScaleX.domain()[1]  &&
+					d.xPoint > electricity_zoomScaleX.domain()[0]) {
+						return d.label;
+					} else {return "";}
+				})
 				electricity_zoom_g.selectAll('.annotation-peak-circles').attr('cx', function(d){return electricity_zoomScaleX(d.xPoint);})
 			}
 
@@ -969,13 +1061,24 @@ var el_reading = el_reading_box.append('text')
 //============================================================
 
 			function DefineExtent(timestamp) {
-				// return 'from to' positions for brush to fit around the timestamp
+				var center = timestamp.getTime();
 				var hhf = 180*60*1000 // three hours (180min)
-				var from = timestamp.getTime() - hhf
-				var to = timestamp.getTime() + hhf
-
-				var end = data.meta.period.end.getTime()
-				var start = data.meta.period.start.getTime()
+				//1. Check if 'timestamp', around which the window is meant to be centered, is outside the x-axis extent
+				if (center < (extent[0])) {
+					var from = extent[0];
+					var to = extent[0] + 2*hhf;
+				} else {
+					if (center > (extent[1])) {
+						var from = extent[1] - 2*hhf;
+						var to = extent[1];
+					} else {
+						// return 'from to' positions for brush to fit around the timestamp
+						var from = center - hhf
+						var to = center + hhf
+					}
+				}
+				var end = extent[1].getTime();//data.meta.period.end.getTime()
+				var start = extent[0].getTime();//data.meta.period.start.getTime()
 				if(to > end){
 					var from = end - ( 2 * hhf )
 					var to = end}
@@ -1031,6 +1134,123 @@ function toolbox_label(d){
 
 
 
+	//====== to draw daylight background ======
+	function colour_background(specs) {
+		//specs is of form:
+		// {'experiment_start_time':INT,
+		// 'experiment_end_time':INT,
+		// 'width':INT,
+		// 'height':INT,
+		// 'where':SOMEWHERE WHERE D3 CAN DRAW}
+
+		reference_time_array = create_reference_time_array(specs.experiment_start_time, specs.experiment_end_time); //indexed by experimental time, value gives reference (absolute wrt 24 hours) time
+		daylight = create_daylight_minute_array(); //independent of data for now. Uses preset times for dawn and dusk
+		dd = assign_colour_rectangles(reference_time_array, daylight);
+
+		absolute_timescale_X = d3.scaleLinear()
+														 .domain([0, reference_time_array.length])
+														 .range([0, specs.width]);
+
+		function daylight_rect(d, scaleX) {
+			 return [{x:scaleX(d.start_min), y:0}, {x:scaleX(d.start_min), y:specs.height}, {x:scaleX(d.end_min), y:specs.height}, {x:scaleX(d.end_min), y:0}]
+		}
+		var lineFunction = d3.svg.line()
+														 .x(function(d) { return d.x; })
+														 .y(function(d) { return d.y; })
+														 .interpolate("linear");
+		specs.where.selectAll('.daytime_rects')
+								.data(dd)
+								.enter()
+								.append('path')
+								.attr('d', function(d){
+									var myrect = daylight_rect(d, absolute_timescale_X);
+									return lineFunction(myrect)})
+								.attr("fill", function(d){ return d3.rgb(d.colour[0], d.colour[1], d.colour[2]); })
+								.attr("stroke", function(d){ return d3.rgb(d.colour[0], d.colour[1], d.colour[2]); }) //!important here!
+	}
+
+	function create_reference_time_array(initial_time, end_time) {
+		//assumes max span is 2 days
+		var initial_minute = (+initial_time.substr(0,2)*60) + (+initial_time.substr(2,3)),
+				end_minute = (+end_time.substr(0,2)*60) + (+end_time.substr(2,3));
+		var reference_time = [];
+		for (var i = initial_minute; i < 24*60; i++) { reference_time.push(i); }
+		for (var i = 0; i < end_minute; i++) { reference_time.push(i); }
+		return reference_time;
+	}
+
+	function assign_colour_rectangles(ref_array, daylight_sequence) {
+		//takes a sequence of absolute minutes (our_array = e.g. 1339, 0, 1, 2) and creates a sequence of rectangles defined by daylight colours
+		//daylight_sequence is an array of daylight colour associated with absolute minute given by the index of that colour
+		var out = [];
+		var start_min = 0;
+		var this_colour = daylight_sequence[ref_array[start_min]];
+		for (var i = 1; i < ref_array.length; i++) {
+			if (daylight_sequence[ref_array[i]] != this_colour) {
+				out.push({
+					'start_min':start_min,
+					'end_min':i,
+					'colour':this_colour
+				});
+				start_min = i;
+				this_colour = daylight_sequence[ref_array[i]];
+			} else {
+				if (i == (ref_array.length - 1) ) {
+					out.push({
+						'start_min':start_min,
+						'end_min':i,
+						'colour':this_colour
+					});
+				}
+			}
+		}
+		return out;
+	}
+
+	function create_daylight_minute_array() {
+		//function returns a 60*24 array of colours, indexed by absolute minutes, starting from midnight
+		var dawn = ['06 00', '08 00'], dusk = ['18 00', '20 00'];
+		var colour_day_time = [235,215,159], colour_night_time = [117, 117, 187];
+
+		//absolute minute
+		var dawn_start = (+dawn[0].substr(0,2)*60) + (+dawn[0].substr(2,3)),
+				dawn_end = (+dawn[1].substr(0,2)*60) + (+dawn[1].substr(2,3)),
+				dusk_start = (+dusk[0].substr(0,2)*60) + (+dusk[0].substr(2,3)),
+				dusk_end = (+dusk[1].substr(0,2)*60) + (+dusk[1].substr(2,3)),
+				dawn_length = dawn_end - dawn_start,
+				dusk_length = dusk_end - dusk_start;
+
+		var range_R = colour_day_time[0] - colour_night_time[0];
+		var range_B = colour_day_time[1] - colour_night_time[1];
+		var range_G = colour_day_time[2] - colour_night_time[2];
+		var num_bits_dawn = dawn_length - 1;
+		var num_bits_dusk = dusk_length - 1;
+		var inc_R_dawn = range_R/num_bits_dawn;
+		var inc_B_dawn = range_B/num_bits_dawn;
+		var inc_G_dawn = range_G/num_bits_dawn;
+		var inc_R_dusk = range_R/num_bits_dusk;
+		var inc_B_dusk = range_B/num_bits_dusk;
+		var inc_G_dusk = range_G/num_bits_dusk;
+
+		var daylight_colours = [];
+		var day_length = 24*60;
+		for (var i = 0; i < dawn_start; i++) { daylight_colours.push(colour_night_time); };
+		for (var i = 0; i < dawn_length; i++) {
+			var new_R = colour_night_time[0] + i*inc_R_dawn;
+			var new_B = colour_night_time[1] + i*inc_B_dawn;
+			var new_G = colour_night_time[2] + i*inc_G_dawn;
+			daylight_colours.push([new_R, new_B, new_G]);
+		};
+		for (var i = 0; i < (dusk_start - dawn_end); i++) { daylight_colours.push(colour_day_time); };
+		for (var i = 0; i < dusk_length; i++) {
+			var new_R = colour_day_time[0] - i*inc_R_dusk;
+			var new_B = colour_day_time[1] - i*inc_B_dusk;
+			var new_G = colour_day_time[2] - i*inc_G_dusk;
+			daylight_colours.push([new_R, new_B, new_G]);
+		};
+		for (var i = 0; i < (24*60 - dusk_end); i++) { daylight_colours.push(colour_night_time); };
+		return daylight_colours;
+	}
 
 
 
