@@ -182,3 +182,30 @@ div.tooltip {
 g.brush>.resize {
     display: none;
 }
+
+
+.care_self {
+    background-color: #cec;
+}
+.care_other {
+    background-color: #ace;
+}
+.care_house {
+    background-color: #eda;
+}
+.recreation {
+    background-color: #ece;
+}
+.travel {
+    background-color: #eea;
+}
+.food {
+    background-color: #cea;
+}
+.work {
+    background-color: #cde;
+}
+.other_category {
+    background-color: #eec;
+}
+
