@@ -183,29 +183,28 @@ g.brush>.resize {
     display: none;
 }
 
-
+/* use "FILL" and not "background-color" */
 .care_self {
-    background-color: #cec;
+    fill: #cec;
 }
 .care_other {
-    background-color: #ace;
+    fill: #ace;
 }
 .care_house {
-    background-color: #eda;
+    fill: #eda;
 }
 .recreation {
-    background-color: #ece;
+    fill: #ece;
 }
 .travel {
-    background-color: #eea;
+    fill: #eea;
 }
 .food {
-    background-color: #cea;
+    fill: #cea;
 }
 .work {
-    background-color: #cde;
+    fill: #cde;
 }
 .other_category {
-    background-color: #eec;
+    fill: #eec;
 }
-
