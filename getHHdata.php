@@ -13,8 +13,6 @@ if (mysqli_connect_errno()) {
 $dotcolours = array( '#c66', '#cc6', '#6cc', '#c6c', '#6c6', '#ccffcc', '#cc00ff', '#ccff00', '#ccffff', '#cccccc');
 
 $actColours = array( 'care_self'=>'#cec', 'care_other'=>'#ace', 'care_house'=>'#eda', 'recreation'=>'#ece', 'travel'=>'#eea', 'food'=>'#cea', 'work'=>'#cde', 'other_category'=>'#eec');
-$actColoursDim = array( 'care_self'=>'#000', 'care_other'=>'#000', 'care_house'=>'#000', 'recreation'=>'#000', 'travel'=>'#000', 'food'=>'#000', 'work'=>'#000', 'other_category'=>'#000');
-// $actColoursDim = array( 'care_self'=>'#aca', 'care_other'=>'#8ac', 'care_house'=>'#cb8', 'recreation'=>'#cac', 'travel'=>'#cc8', 'food'=>'#ac8', 'work'=>'#abc', 'other_category'=>'#cca');
 
 $actLocation = array( '1'=>'Home', '2'=>'Travelling', '3'=>'At work', '4'=>'Public place', '5'=>'Outdoors', '6'=>'Garden', '7'=>'Somewhere else');
 
@@ -44,11 +42,7 @@ else
             $act['period'] = substr_replace($act['dt_activity'],'0:00',-4);
             $cat = $act['category'];
             if ($cat == '') { $cat = 'other_category';}
-            if ($loc == "1" || $loc == "6") {
-                $act['dotcolour'] = $actColours[$cat];
-            } else {
-                $act['dotcolour'] = $actColoursDim[$cat];
-            }
+            $act['dotcolour'] = $actColours[$cat];
             $activities[] = $act;
         }
         $userActivities = array('activities'=>$activities);
