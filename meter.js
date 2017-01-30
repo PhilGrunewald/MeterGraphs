@@ -93,6 +93,10 @@ var width = {
 	"el_reading_boxes": 140 //otherwise text does not fit
 }
 var annotation_peak_radius = 5;
+
+//The schemes below can be used to assign 'fill' to activity squares. Currently it is done
+//by assigning a class to the square, based on the first activity in the time period defined
+//by that square, and then they are filled in the css.
 var original_colour_scheme = ['#cec', '#cea', '#eda', '#eec', '#ace', '#000'];
 //var alternative_colour_scheme = ['#66c2a5', '#a6d854', '#fc8d62', '#e78ac3', '#8da0cb', '#404040']; //random scheme
 //var alternative_colour_scheme = ['#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3', '#404040']; //random scheme
@@ -503,6 +507,7 @@ if (draw_value_points) {
 						"dt_period": act.dt_period,
 						"idMeta": act.idMeta,
 						"dotcolour": act.dotcolour,
+						"category": act.category,
 						"activities": []	}
 					data.activities.push(act)
 					periods[bin].activities.push(act)
@@ -602,14 +607,14 @@ var activities_instances = activities_g.selectAll('activities_instances')
 
 //deliberately with no hover functionality
 activities_instances.append('rect')
-								.style('fill', function(d,i) {
-									var ind = original_colour_scheme.indexOf(d.dotcolour);
-									return alternative_colour_scheme[ind];
-									//alternatively:
-									//return original_colour_scheme[ind];
-									//or just:
-									//return d.dotcolour
-								})
+								// .style('fill', function(d,i) {
+								// 	var ind = original_colour_scheme.indexOf(d.dotcolour);
+								// 	return alternative_colour_scheme[ind];
+								// 	//alternatively:
+								// 	//return original_colour_scheme[ind];
+								// 	//or just:
+								// 	//return d.dotcolour
+								// })
 								.attr('width', 10 )
 								.attr('x', function(d) {return electricityScaleX( d.dt_period ) })
 								.attr('height', height.activity)
@@ -619,6 +624,7 @@ activities_instances.append('rect')
 								} )
 								.attr("rx", 3)
 								.attr("ry", 3)
+								.attr("class", function(d) {return d.category})
 
 
 var overview_labels_loc_brief = ['00 00', '06 00', '12 00', '18 00']; //this is explicit for greater control
@@ -765,14 +771,15 @@ function append_labels(location_brief, group, scale) {
 
 //add activity rectanges
 var activity_rects = zoom_activities_instances.append('rect')
-										.style('fill', function(d,i) {
-											var ind = original_colour_scheme.indexOf(d.dotcolour);
-											return alternative_colour_scheme[ind];
-											//alternatively:
-											//return original_colour_scheme[ind];
-											//or just:
-											//return d.dotcolour
-										})
+												.attr("class", function(d) {return d.category})
+										// .style('fill', function(d,i) {
+										// 	var ind = original_colour_scheme.indexOf(d.dotcolour);
+										// 	return alternative_colour_scheme[ind];
+										// 	//alternatively:
+										// 	//return original_colour_scheme[ind];
+										// 	//or just:
+										// 	//return d.dotcolour
+										// })
 										.attr("clip-path", "url(#activities_clip)")
 										.attr('width', 20 )
 										.attr('x', function(d) {
