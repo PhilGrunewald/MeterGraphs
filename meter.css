@@ -7,7 +7,7 @@ svg {
 .area-energy {
   fill: #393;
   stroke: none;
-  opacity: 0.8;
+  opacity: 0.9;
   clip-path: url(#clip);
 }
 
@@ -45,6 +45,16 @@ svg {
   shape-rendering: geometricPrecision;
 }
 
+.home {
+  /*fill: #F8F8F8;*/
+  fill: #9c9;
+  fill-opacity: .5;
+}
+.away {
+  fill: #D8D8D8;
+  fill-opacity: .5;
+}
+
 #canvas {
   display: inline-block;
   margin-top: 10px;
@@ -72,9 +82,26 @@ text {
 	fill: #666;
 }
 .timelabel {
-	transform: rotate(-90deg);
+	/*transform: rotate(-90deg);*/
 	font-size: 20px;
 	fill: #666;
+}
+.annotationline {
+    fill: none;
+    stroke: #9c9;
+    stroke-width: 2.5px;
+}
+.annotation {
+  	font-size: 120%;
+    fill: #666;
+}
+.annotation-peak {
+  	font-size: 180%;
+    fill: #f33;
+}
+.annotation-peak-circles {
+      fill: #f33;
+      opacity: 0.7;
 }
 
 div.tooltip {
@@ -87,7 +114,7 @@ div.tooltip {
   pointer-events: none;
   font-size: 130%;
   color: #fff;
-  opacity: 0;  
+  opacity: 0;
 }
 
 /* FOR LINEGRAPH */
@@ -140,4 +167,30 @@ div.tooltip {
 
 g.brush>.resize {
     display: none;
+}
+
+/* use "FILL" and not "background-color" */
+.care_self {
+    fill: #cec;
+}
+.care_other {
+    fill: #ace;
+}
+.care_house {
+    fill: #eda;
+}
+.recreation {
+    fill: #ece;
+}
+.travel {
+    fill: #eea;
+}
+.food {
+    fill: #cea;
+}
+.work {
+    fill: #cde;
+}
+.other_category {
+    fill: #eec;
 }
