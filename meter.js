@@ -506,7 +506,7 @@ if (draw_value_points) {
 					if(!periods.hasOwnProperty(bin)) periods[bin] = {
 						"dt_period": act.dt_period,
 						"idMeta": act.idMeta,
-						"dotcolour": act.dotcolour,
+						//"dotcolour": act.dotcolour,
 						"category": act.category,
 						"activities": []	}
 					data.activities.push(act)
@@ -624,7 +624,10 @@ activities_instances.append('rect')
 								} )
 								.attr("rx", 3)
 								.attr("ry", 3)
-								.attr("class", function(d) {return d.category})
+								.attr("class", function(d) {
+									if (d.category.length == 0) {return "other_category"}
+									else {return d.category}
+								})
 
 
 var overview_labels_loc_brief = ['00 00', '06 00', '12 00', '18 00']; //this is explicit for greater control
@@ -771,7 +774,10 @@ function append_labels(location_brief, group, scale) {
 
 //add activity rectanges
 var activity_rects = zoom_activities_instances.append('rect')
-												.attr("class", function(d) {return d.category})
+											.attr("class", function(d) {
+												if (d.category.length == 0) {return "other_category"}
+												else {return d.category}
+											})
 										// .style('fill', function(d,i) {
 										// 	var ind = original_colour_scheme.indexOf(d.dotcolour);
 										// 	return alternative_colour_scheme[ind];
@@ -794,6 +800,7 @@ var activity_rects = zoom_activities_instances.append('rect')
 										} )
 										.attr("rx", 3)
 										.attr("ry", 3)
+
 										// .on("mouseover", function(d) {
 										// 	tooltip.transition()
 										// 	.duration(200)
@@ -839,6 +846,7 @@ var enjoyment_icons = zoom_activities_instances.append('image')
 									.style("opacity", 0)
 									.style("border", "none")
 									})
+									.on("click", function(d){console.log(d)})
 
 
 
