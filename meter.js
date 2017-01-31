@@ -367,6 +367,9 @@ colour_background({
 											.attr("width", width.electricity)
 											.attr("height", height.zoom + height.spacing + annotation_peak_radius);
 
+//this is actually needed: draggable area is thus the white space behind the zoomed electricity graph. If it's not defined, then even
+//though electricity_zoom_g can be used to call drag on, clicking on the white area would do nothing - because the only thing
+//that would appended to the el...zoom_g would be the actual electricity graph
 var draggable_area = electricity_zoom_g.append('rect').attr('opacity', 0).attr('x', 0).attr('y', 0).attr('width', width.electricity).attr('height', height.zoom);
 
 var electricity_graph =  electricity_zoom_g.append('path')
@@ -1071,7 +1074,12 @@ var el_reading = el_reading_box.append('text')
 			//either:
 			//electricity_zoom_g.call(drag); //this means that ONLY if you click on the electricity area..
 			//or:
-			draggable_area.call(drag); //on anything that is not activity bars
+			//draggable_area.call(drag); //on anything that is not activity bars
+			//electricity_graph.call(drag);
+			//enjoyment_icons.call(drag);
+			//myrects.call(drag);
+			activities_zoom_g.call(drag);
+			electricity_zoom_g.call(drag);
 
 //============================================================
 
