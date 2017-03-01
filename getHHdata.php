@@ -58,7 +58,7 @@ else
 // ELECTRICITY
 
 
-   $eLabels = array( 'data'=>'Electricity', 'x_axis'=>'Time', 'y_axis'=>'Demand [Watt]');
+   $eLabels = array( 'data'=>'Electricity', 'x_axis'=>'Time', 'y_axis'=>'Electricity [Watt]', 'y_axis2'=>'Activities');
 
    $sqlq = "SELECT idMeta FROM Meta WHERE Household_idHousehold = '" . $householdID . "' AND DataType = 'E'";
    $r_elec_readings =  mysqli_query($db,$sqlq);

@@ -74,7 +74,7 @@ var height = {
 	"activities_bar_spacing":	2,		// vertical distance between activities bars
 
 	// between grpahs
-	"spacing":          		60,		// between graphs
+	"spacing":          		30,		// between graphs
 
 	// bottom graph
 	"zoom":						250,
@@ -82,12 +82,12 @@ var height = {
 	"activities_bar_zoom":		20,
 	"activities_bar_spacing_zoom": 4,	//vertical distance between activities bars
 
-	"el_reading_boxes":			30		//otherwise text does not fit
+	"el_reading_boxes":			100		//otherwise text does not fit
 }
 
 var width = {
 	"electricity":				600,
-	"el_reading_boxes":			140		//otherwise text does not fit
+	"el_reading_boxes":			160		//otherwise text does not fit
 }
 
 var margins = {
@@ -131,8 +131,8 @@ d3.json(apiurl, function(error, json) {
 
 							var electricity_minimum_reading = 10; //will still use ALL readings to get min/max/av el stats
 
-							var draw_value_lines = false; //lines of min/max/av values, with annotations
-							var draw_value_points = false; //min/max points with annotations
+							var draw_value_lines = true; //lines of min/max/av values, with annotations
+							var draw_value_points = true; //min/max points with annotations
 							extent = set_master(electricity_minimum_reading);
 
 							//related functions
@@ -167,7 +167,7 @@ d3.json(apiurl, function(error, json) {
 								})
 							}
 							function set_master(el_min){
-								var extent_out, extent_el, extent_act;
+								var extent_out, extent_el;
 								//
 								//Find out what data there is
 								var el_exists = false, act_exists = false;
@@ -176,21 +176,7 @@ d3.json(apiurl, function(error, json) {
 									if ( (extent_el[1]-extent_el[0]) > 0) {el_exists = true;}
 								}
 								if (el_exists) {
-									draw_value_lines = true;
-									draw_value_points = true; //however, they will only be drawn if they are in the extent
-										//use this look for activities within (el_min - 1 min, el_max)
-										temp_extent_el = [new Date(extent_el[0].getTime() - 60*1000), extent_el[1]]; //since electricity for some starts being recorded at 17:01..
-										//or, just use el_extent:
-										//var temp_extent_el = extent_el;
-										var extent_act = get_extent(temp_extent_el);
-										if (extent_act) { //if there are some activities
-											extent_el[0] = (extent_el[0].getTime()<extent_act[0].getTime())?extent_el[0]:extent_act[0];
-											extent_el[1] = (extent_el[1].getTime()>extent_act[1].getTime())?extent_el[1]:extent_act[1];
-											extent_out = extent_el;
-										} else {
-											console.log("No activities recorded.");
-											extent_out = extent_el;
-										}
+									extent_out = extent_el;
 								} else {
 									extent_out = get_extent();
 									if (extent_out == false) {
@@ -286,10 +272,17 @@ d3.json(apiurl, function(error, json) {
 								//label the y axis
 								electricity_zoom_g.append('text')
 								.attr('dy', '-0.5em')
-								.attr('dx', '-200')  // to match height.electricity_zoom
-								.attr('text-anchor', 'start')
+								.attr('dx', -height.zoom/2)  // to match height.electricity_zoom
+								.attr('text-anchor', 'middle')
 								.attr('class', 'energy-y-label')
 								.text(data.meta.labels.y_axis);
+
+								activities_zoom_g.append('text')
+								.attr('dy', '-0.5em')
+								.attr('dx', '0')  // to match height.electricity_zoom
+								.attr('text-anchor', 'end')
+								.attr('class', 'energy-y-label')
+								.text(data.meta.labels.y_axis2);
 
 							//adding the hover_over_el->see_the_watt_value functionality
 							var bisectDate = d3.bisector(function(d) { return d.timestamp }).left;
@@ -299,24 +292,30 @@ d3.json(apiurl, function(error, json) {
 								var this_time = electricity_zoomScaleX.invert(x);
 								var ind = bisectDate(data.energy, this_time);
 								var y = electricity_zoomScaleY.range()[1] - electricity_zoomScaleY(data.energy[ind].watt)
-									el_reading_rect.attr("x", x)
-									.attr("y", y - height.el_reading_boxes)
+								el_reading_rect
+									.attr("x", x - width.el_reading_boxes/2)
+									.attr("y", y - height.zoom - height.el_reading_boxes)
 									.attr("width", width.el_reading_boxes)
-									.attr("height", 20)
-									el_reading.attr("x",x + width.el_reading_boxes/2)
-									.attr('text-anchor', 'middle')//to appear in the middle of the green box
-									.attr("y", y - height.el_reading_boxes - 10)
-									.text(dayOfWeek[this_time.getDay()] +" "+ this_time.getHours() + ":" + ("0" + this_time.getMinutes()).slice(-2) + " - " +data.energy[ind].watt + " Watt")
+									.attr("height", height.el_reading_boxes)
+
+								el_reading_time
+									.attr("x",x)
+									.attr('text-anchor', 'middle')			//to appear in the middle of the green box
+									.attr("y", y - height.zoom - height.el_reading_boxes)
+									.text(dayOfWeek[this_time.getDay()] +" "+ this_time.getHours() + ":" + ("0" + this_time.getMinutes()).slice(-2))
+									.style("font-size", "20")
+								el_reading_watt
+									.attr("x",x)
+									.attr('text-anchor', 'middle')			//to appear in the middle of the green box
+									.attr("y", y - height.zoom - height.el_reading_boxes)
+									.text(data.energy[ind].watt + " Watt")
+									.style("font-size", "30")
 							})
 							.on('mouseout', function(){
 								el_reading_rect.attr("width", 0).attr("height", 0);
-								el_reading.text("")
+								el_reading_time.text("")
+								el_reading_watt.text("")
 							})
-
-
-
-
-
 
 							//adding the click_on_electricity->a_form_comes_up functionality
 							electricity_graph.on("click", function() {
@@ -332,8 +331,9 @@ d3.json(apiurl, function(error, json) {
 
 							//the electricity graph annotations come behind the activities
 							valueLine({ lineValue: data.meta.annotations.avg.Watt, label: 'Average'})//data.meta.annotations.avg.label })
-valueLine({ lineValue: data.meta.annotations.max.Watt, label: data.meta.annotations.max.label })
-valueLine({ lineValue: data.meta.annotations.min.Watt, label: data.meta.annotations.min.label })
+							valueLine({ lineValue: data.meta.annotations.max.Watt, label: data.meta.annotations.max.label })
+							valueLine({ lineValue: data.meta.annotations.min.Watt, label: data.meta.annotations.min.label })
+
 	function valueLine(value){
 		if(draw_value_lines) {
 			//have to compute it again here, since json appears to erroneously pass on a too-high value
@@ -361,12 +361,12 @@ valueLine({ lineValue: data.meta.annotations.min.Watt, label: data.meta.annotati
 	}
 
 electricity_zoom_g.append("clipPath")
-.attr("id", "clip_annotations")
-.append("rect")
-.attr("x", -80)
-.attr("y",  -height.spacing)
-.attr("width", width.electricity + 160)
-.attr("height", height.zoom + height.spacing + annotation_peak_radius);
+	.attr("id", "clip_annotations")
+	.append("rect")
+	.attr("x", -80)
+	.attr("y",  -height.spacing)
+	.attr("width", width.electricity + 160)
+	.attr("height", height.zoom + height.spacing + annotation_peak_radius);
 
 var valuePoints = []
 valuePoints.push({ yPoint: data.meta.annotations.max.Watt, xPoint: d3.time.format("%Y-%m-%d %H:%M:%S").parse(data.meta.annotations.max.dt),  label: "Your peak demand"} );
@@ -735,10 +735,19 @@ var el_reading_box = activities_zoom_g.append('g').attr('opacity',1); //append t
 var el_reading_rect = el_reading_box.append('rect')
 .attr("width", 0)
 .attr("height", 0)
-.attr("fill", '#53c653');
+.attr("rx", 15)
+.attr("ry", 15)
+.attr("opacity", 0.5)
+.attr("fill", '#999');
 
-var el_reading = el_reading_box.append('text')
-.attr('dy', '2em')
+var el_reading_time = el_reading_box.append('text')
+.attr('dy', '1.5em')
+.attr('text-anchor', 'start')
+.attr('fill', '#003300')
+.text("");
+
+var el_reading_watt = el_reading_box.append('text')
+.attr('dy', '2.5em')
 .attr('text-anchor', 'start')
 .attr('fill', '#003300')
 .text("");
@@ -927,7 +936,8 @@ function make_brush(){
 		function initialise_coords() {
 			x0 = d3.event.x;
 			el_reading_rect.attr("width", 0).attr("height", 0);
-			el_reading.text("")
+			el_reading_time.text("")
+			el_reading_watt.text("")
 		}
 	function dragmove(d) {
 		var x = d3.event.x;
@@ -945,13 +955,6 @@ function make_brush(){
 		}
 		x0 = x;
 	}
-	//either:
-	//electricity_zoom_g.call(drag); //this means that ONLY if you click on the electricity area..
-	//or:
-	//draggable_area.call(drag); //on anything that is not activity bars
-	//electricity_graph.call(drag);
-	//enjoyment_icons.call(drag);
-	//myrects.call(drag);
 	activities_zoom_g.call(drag);
 	electricity_zoom_g.call(drag);
 
