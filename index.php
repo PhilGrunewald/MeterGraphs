@@ -26,6 +26,7 @@
    $f_idMeta = mysqli_fetch_assoc($q_idMeta);
    $idMeta   = $f_idMeta['idMeta'];
    
+
    $fromEl = "FROM Electricity_1min WHERE Watt > 20 AND Meta_idMeta = " . $idMeta;
    $fromAll = "FROM Electricity_1min WHERE Watt > 20"; 
 
@@ -35,7 +36,36 @@
    $f = mysqli_fetch_assoc($q);
    $dtPeak = $f['dt'];
    $peak   = round($f['Watt']);
+	date_default_timezone_set('UTC');
+	$dtPeakDate = date_create($dtPeak); 
+	$peakday = date_format($dtPeakDate, 'l'); 
+	$peaktime = date_format($dtPeakDate, 'H:m'); 
 
+	// add peak time appliances
+	//
+	if(isset($_GET['a2'])){ 
+		// add manually typed appliance
+		$a2 = $_GET['a2'];
+		$sqlq= "INSERT INTO Activities (`Meta_idMeta`,`dt_activity`,`activity`) VALUES ('".$idMeta."','".$dtPeak."','".$a2."')";
+       	mysqli_query($db, $sqlq);
+	}
+	if(isset($_GET['a1'])){ 
+		// add appliance
+		$a1 = $_GET['a1'];
+		if ($a1 != "Other") {
+			$sqlq= "INSERT INTO Activities (`Meta_idMeta`,`dt_activity`,`activity`) VALUES ('".$idMeta."','".$dtPeak."','".$a1."')";
+        	mysqli_query($db, $sqlq);
+		}
+	}
+
+	// get peak appliances
+	$sqlq= "SELECT activity FROM Activities WHERE Meta_idMeta = $idMeta AND dt_activity = '$dtPeak'";
+	$peakAppliances = [];
+	$results = mysqli_query($db, $sqlq);
+	while ($result = mysqli_fetch_assoc($results)) {
+		$peakAppliances[] = $result['activity'];
+		}
+	
    // HH Average
    $sqlq = "SELECT AVG(Watt) as mean " . $fromEl ;
    $q = mysqli_query($db,$sqlq);
@@ -77,7 +107,11 @@
   <h3>Your electricity profile</h3>
   <p>Thank you for contributing your data to this study. Here is your load profile. </p>
 <p>
-Your <b>average</b> use has been <b><?php echo $mean; ?> Watt</b>, compared to <?php echo $meanAll; ?> W across our participants. These values vary quite a bit day by day and depend on the type of your appliances, season and many other factors (which is part of what we try to understand with this study).</p>
+Your <b>average</b> use has been <b><?php echo $mean; ?> Watt</b>, compared to <?php echo $meanAll; ?> W across our participants.
+<?php if ($mean < 0.8*$meanAll) {echo " You are doing well.";}
+ else if ($mean < 1.2*$meanAll) {echo " So your are quite typical.";}
+ else {echo " Note that there is a lot of variation, depending on household size, type of appliances and activity levels (which is part of what we try to understand with this study).";}
+?>
 
 <p>Your <b>baseload</b> is perhaps more informative. The lowest reading over these 28 hours was 
 <?php echo "<b>".$baseload; 
@@ -92,27 +126,60 @@ Your <b>average</b> use has been <b><?php echo $mean; ?> Watt</b>, compared to <
 		echo " W</b>. You have done better than our average participant ($baseloadAll W). ";
 	}
 ?>
-This baseload mostly depends on stand-by devices and things that are always on (fridges, broadband routers...)</p>
+This baseload mostly depends on stand-by devices and things that are always on (fridges, broadband routers...).</p>
 
-<p>The highest recorded electricity use occurred at <?php echo $peaktime; ?> (<?php echo $peak; ?> W). Which appliances do you think might have been on at this point?
+<p>The highest recorded electricity use occurred on <?php echo $peakday; ?> at <b> <?php echo $peaktime; ?> (<?php echo $peak; ?> W)</b>.  
+</p><p>
+
+<?php
+if (count($peakAppliances) < 1) {
+	echo "Do you remember which appliances might have been in use at this point?";
+	$appLabel = "Can't remember";
+} else {
+	echo "You used: <b>";
+	foreach ($peakAppliances as $peakAppliance) {
+		echo "$peakAppliance - ";
+	}
+	echo "</b><br>Anything else perhaps?";
+	$appLabel = "Nothing else";
+} 
+?>
 </p>
 
 <form class="form-inline" role="form" action="<?php echo $_SERVER['PHP_SELF']; ?>" method="get">
 <input type="hidden" id="id" name="id" value="<?php echo $id; ?>">
-<select name="Appliance">
-  <option value="None">Don't know</option>
-  <option value="Oven">Oven</option>
-  <option value="Microwave">Microwave</option>
-  <option value="EV">Electric Vehicle</option>
-  <option value="Dishwasher">Dish washer</option>
-  <option value="Washingmachine">Washing machine</option>
-  <option value="Tumble Dryer">Tumble dryer</option>
-  <option value="Other">Other</option>
+<select name="a1" onchange="this.form.submit()">
+<option value="<?php echo $appLabel; ?>"><?php echo $appLabel; ?></option>
+  <option disabled>── Laundry ─────────</option>
+  <option <?php if ($a1 == "Tumble dryer") {echo 'selected="selected"';} ?> value="Tumble dryer">Tumble dryer</option>
+  <option <?php if ($a1 == "Washingmachine") {echo 'selected="selected"';} ?> value="Washingmachine">Washing machine</option>
+  <option <?php if ($a1 == "Washe-dryer") {echo 'selected="selected"';} ?>  value="Washe-dryer">Washe-dryer</option>
+  <option <?php if ($a1 == "Ironing") {echo 'selected="selected"';} ?>  value="Ironing">Ironing</option>
+  <option disabled>── Kitchen ─────────</option>
+  <option <?php if ($a1 == "Dishwasher") {echo 'selected="selected"';} ?> value="Dishwasher">Dishwasher</option>
+  <option <?php if ($a1 == "Oven") {echo 'selected="selected"';} ?>  value="Oven">Oven</option>
+  <option <?php if ($a1 == "Microwave") {echo 'selected="selected"';} ?> value="Microwave">Microwave</option>
+  <option <?php if ($a1 == "Kettle") {echo 'selected="selected"';} ?>  value="Kettle">Kettle</option>
+  <option <?php if ($a1 == "Toaster") {echo 'selected="selected"';} ?>  value="Toaster">Toaster</option>
+  <option disabled>── Entertainment  ──</option>
+  <option <?php if ($a1 == "TV") {echo 'selected="selected"';} ?>  value="TV">TV</option>
+  <option <?php if ($a1 == "Mobile device") {echo 'selected="selected"';} ?>  value="Mobile device">Mobile device</option>
+  <option <?php if ($a1 == "Games / Computer") {echo 'selected="selected"';} ?>  value="Games / Computer">Games / Computer</option>
+  <option <?php if ($a1 == "Music / Video") {echo 'selected="selected"';} ?>  value="Music / Video">Music / Video</option>
+  <option disabled>── Household ───────</option>
+  <option <?php if ($a1 == "Vacuum cleaner") {echo 'selected="selected"';} ?>  value="Vacuum cleaner">Vacuum cleaner</option>
+  <option <?php if ($a1 == "Heater") {echo 'selected="selected"';} ?>  value="Heater">Heater</option>
+  <option <?php if ($a1 == "Tools") {echo 'selected="selected"';} ?>  value="Tools">Tools</option>
+  <option <?php if ($a1 == "EV") {echo 'selected="selected"';} ?> value="EV">Electric Vehicle</option>
+  <option disabled>── Other ───────────</option>
+  <option <?php if ($a1 == "Other") {echo 'selected="selected"';} ?>  value="Other">Other... [specify]</option>
 </select>
+<?php if ($a1 == "Other") {
+	echo '<input type="text" name="a2" placeholder="if not listed..."  onkeydown = "if (event.keyCode == 13) this.form.submit() ">';
+} 
+?>
 </form>
 <p>
-
- (Just pick the most important, if there were more than one.</p>
 
   <div id="canvas"></div>
   <div class='tooltip'></div>
