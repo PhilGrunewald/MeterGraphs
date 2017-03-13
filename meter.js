@@ -212,7 +212,15 @@ d3.json(apiurl, function(error, json) {
 								'where':electricity_g
 							});
 
-
+//Without this the visualisation might not work properly! For some reason.. will get a background shape in electricity.
+function compare(a,b) {
+  if (a.timestamp < b.timestamp)
+    return -1;
+  if (a.timestamp > b.timestamp)
+    return 1;
+  return 0;
+}
+data.energy.sort(compare);
 
 							//draw electricity - maybe now should not be making the colour opaque, since then the daylight colour might change it
 							var electricity_area = d3.svg.area()
