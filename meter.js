@@ -140,7 +140,7 @@ d3.json(apiurl, function(error, json) {
 //use selection_method = 2 to set the extent of the x axis as max(electricity_extent, activity_extent with margins)
 //use selection_method = 3 to impose el. extent (as above)
 //use selection_method = 4 to impose activity extent (with margins)
-var selection_method = 1;
+var selection_method = 2;
 
 var electricity_minimum_reading = 10; //will still use ALL readings to get min/max/av el stats
 //NB: currently the y axis is designed to start from 0, rather than some min. el value. Which means readings below the minimum
@@ -309,7 +309,15 @@ colour_background({
 	'where':electricity_g
 });
 
-
+//Without this the visualisation might not work properly! For some reason.. will get a background shape in electricity.
+function compare(a,b) {
+  if (a.timestamp < b.timestamp)
+    return -1;
+  if (a.timestamp > b.timestamp)
+    return 1;
+  return 0;
+}
+data.energy.sort(compare);
 
 //draw electricity - maybe now should not be making the colour opaque, since then the daylight colour might change it
 	var electricity_area = d3.svg.area()
