@@ -107,12 +107,15 @@
   <h3>Your electricity profile</h3>
   <p>Thank you for contributing your data to this study. Here is your load profile. </p>
 <p>
-Your <b>average</b> use has been <b><?php echo $mean; ?> Watt</b>, compared to <?php echo $meanAll; ?> W across our participants.
+  <div class="col-xs-12 col-sm-6 col-md-4 rounded-box">
+Your <b>average</b></br> use has been <b><?php echo $mean; ?> Watt</b>, compared to <?php echo $meanAll; ?> W across our participants.
 <?php if ($mean < 0.8*$meanAll) {echo " You are doing well.";}
  else if ($mean < 1.2*$meanAll) {echo " So your are quite typical.";}
  else {echo " Note that there is a lot of variation, depending on household size, type of appliances and activity levels (which is part of what we try to understand with this study).";}
 ?>
+</div>
 
+  <div class="col-xs-12 col-sm-6 col-md-4 rounded-box">
 <p>Your <b>baseload</b> is perhaps more informative. The lowest reading over these 28 hours was 
 <?php echo "<b>".$baseload; 
 	if ($baseload > $baseloadAll) {
@@ -127,7 +130,9 @@ Your <b>average</b> use has been <b><?php echo $mean; ?> Watt</b>, compared to <
 	}
 ?>
 This baseload mostly depends on stand-by devices and things that are always on (fridges, broadband routers...).</p>
+</div>
 
+  <div class="col-xs-12 col-sm-6 col-md-4 rounded-box">
 <p>The highest recorded electricity use occurred on <?php echo $peakday; ?> at <b> <?php echo $peaktime; ?> (<?php echo $peak; ?> W)</b>.  
 </p><p>
 
@@ -148,14 +153,14 @@ if (count($peakAppliances) < 1) {
 
 <form class="form-inline" role="form" action="<?php echo $_SERVER['PHP_SELF']; ?>" method="get">
 <input type="hidden" id="id" name="id" value="<?php echo $id; ?>">
-<select name="a1" onchange="this.form.submit()">
+<select name="a1" id="a1" onchange="this.form.submit()">
 <option value="<?php echo $appLabel; ?>"><?php echo $appLabel; ?></option>
-  <option disabled>── Laundry ─────────</option>
+  <option disabled>── Laundry ──</option>
   <option <?php if ($a1 == "Tumble dryer") {echo 'selected="selected"';} ?> value="Tumble dryer">Tumble dryer</option>
   <option <?php if ($a1 == "Washing machine") {echo 'selected="selected"';} ?> value="Washing machine">Washing machine</option>
   <option <?php if ($a1 == "Washe-dryer") {echo 'selected="selected"';} ?>  value="Washe-dryer">Washe-dryer</option>
   <option <?php if ($a1 == "Ironing") {echo 'selected="selected"';} ?>  value="Ironing">Ironing</option>
-  <option disabled>── Kitchen ─────────</option>
+  <option disabled>── Kitchen ──</option>
   <option <?php if ($a1 == "Dishwasher") {echo 'selected="selected"';} ?> value="Dishwasher">Dishwasher</option>
   <option <?php if ($a1 == "Oven") {echo 'selected="selected"';} ?>  value="Oven">Oven</option>
   <option <?php if ($a1 == "Microwave") {echo 'selected="selected"';} ?> value="Microwave">Microwave</option>
@@ -166,12 +171,12 @@ if (count($peakAppliances) < 1) {
   <option <?php if ($a1 == "Mobile device") {echo 'selected="selected"';} ?>  value="Mobile device">Mobile device</option>
   <option <?php if ($a1 == "Games / Computer") {echo 'selected="selected"';} ?>  value="Games / Computer">Games / Computer</option>
   <option <?php if ($a1 == "Music / Video") {echo 'selected="selected"';} ?>  value="Music / Video">Music / Video</option>
-  <option disabled>── Household ───────</option>
+  <option disabled>── Household ──</option>
   <option <?php if ($a1 == "Vacuum cleaner") {echo 'selected="selected"';} ?>  value="Vacuum cleaner">Vacuum cleaner</option>
   <option <?php if ($a1 == "Heater") {echo 'selected="selected"';} ?>  value="Heater">Heater</option>
   <option <?php if ($a1 == "Tools") {echo 'selected="selected"';} ?>  value="Tools">Tools</option>
   <option <?php if ($a1 == "EV") {echo 'selected="selected"';} ?> value="EV">Electric Vehicle</option>
-  <option disabled>── Other ───────────</option>
+  <option disabled>── Other ──</option>
   <option <?php if ($a1 == "Other") {echo 'selected="selected"';} ?>  value="Other">Other... [specify]</option>
 </select>
 <?php if ($a1 == "Other") {
@@ -180,10 +185,17 @@ if (count($peakAppliances) < 1) {
 ?>
 </form>
 <p>
+</div>
 
   <div id="canvas"></div>
   <div class='tooltip'></div>
 
+<p>Colours:
+<span class="care_self colour-key"> Personal </span> 
+<span class="food colour-key"> Food </span> 
+<span class="work colour-key"> Work </span> 
+<span class="other_category colour-key"> Other </span> 
+</p>
   <script type="text/javascript" src="meter.js"></script>
 
   <!-- Modal for Users -->

@@ -37,14 +37,6 @@ svg {
 	stroke: none;
 }
 
-/*
-#scatterGraph_activities > .axis line {
-  fill: none;
-  stroke-opacity="0.2"
-  shape-rendering: crispEdges;
-}
-*/
-
 .brush .extent {
   stroke: #090;
   fill: #fff;
@@ -82,11 +74,24 @@ svg {
   background-color: #fff;
 }
 
+#a1 {
+/* the appliance list */
+  width: 95%;
+}
+
 text {
   font: 12px sans-serif;
   opacity: 0.4;
   pointer-events: none;
   text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
+}
+
+.rounded-box {
+background-color: #9c9;
+padding: 15px;
+border: 5px solid white;
+/*margin: 10px;*/
+border-radius:20px;
 }
 
 .energy-y-label {
@@ -184,53 +189,42 @@ g.brush>.resize {
     display: none;
 }
 
-/* use "FILL" and not "background-color" */
+/* use "FILL" -  "background-color" is only for the legend in index.php*/
 .care_self {
     fill: #5a5;
+    color: white;
+    background-color: #5a5;
 }
 .food {
     fill: #cb0;
+    color: white;
+    background-color: #cb0;
 }
 .recreation {
     fill: #5a5;
 }
 .care_other {
-    fill: #404;
+    fill: #40a;
 }
 .care_house {
-    fill: #404;
+    fill: #40a;
 }
 .work {
-    fill: #404;
+    fill: #40a;
+    color: white;
+    background-color: #40a;
 }
 .travel {
     fill: #d66;
 }
 .other_category {
     fill: #d66;
+    color: white;
+    background-color: #d66;
 }
 
-
-.color-primary-0 { color: #93A537 }	/* Main Primary color */
-.color-primary-1 { color: #EAF7A5 }
-.color-primary-2 { color: #BDCE67 }
-.color-primary-3 { color: #6B7B15 }
-.color-primary-4 { color: #455200 }
-
-.color-secondary-1-0 { color: #328A2E }	/* Main Secondary color (1) */
-.color-secondary-1-1 { color: #8DCF8A }
-.color-secondary-1-2 { color: #5AAC56 }
-.color-secondary-1-3 { color: #156711 }
-.color-secondary-1-4 { color: #034500 }
-
-.color-secondary-2-0 { color: #A8383B }	/* Main Secondary color (2) */
-.color-secondary-2-1 { color: #FDA8AB }
-.color-secondary-2-2 { color: #D3696C }
-.color-secondary-2-3 { color: #7E1518 }
-.color-secondary-2-4 { color: #540002 }
-
-.color-complement-0 { color: #6C256F }	/* Main Complement color */
-.color-complement-1 { color: #A46FA6 }
-.color-complement-2 { color: #88468A }
-.color-complement-3 { color: #510E53 }
-.color-complement-4 { color: #360037 }
+.colour-key {
+    padding: 5px;
+    margin: 10px;
+    border-radius:10px;
+}
