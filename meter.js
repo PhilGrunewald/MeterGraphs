@@ -114,7 +114,7 @@ d3.json(apiurl, function(error, json) {
     var canvas = d3.select('#canvas') //a Pointer to newly created svg element
         .append('svg')
         .attr('width', 1000)
-        .attr('height', 1000)
+        .attr('height', 550)    // XXX set to exact height (sum of parts)
         .attr('transform', 'translate(' + margins.canvas_left + ', ' + margins.canvas_top + ')');
                 var overview = canvas.append('g')
                 .attr('transform', 'translate(' + margins.overview_left + ', ' + margins.overview_top + ')');
