@@ -3,7 +3,7 @@
 include('../db.php');
 
 // Connect to the database server
-ini_set("mysqli.default_socket","/tmp/mysql.sock");
+// ini_set("mysqli.default_socket","/tmp/mysql.sock");
 $db = mysqli_connect($server,$dbUserName,$dbUserPass,$dbName);
 
 if (mysqli_connect_errno()) {
@@ -58,7 +58,7 @@ else
 // ELECTRICITY
 
 
-   $eLabels = array( 'data'=>'Electricity', 'x_axis'=>'Time', 'y_axis'=>'Demand [Watt]');
+   $eLabels = array( 'data'=>'Electricity', 'x_axis'=>'Time', 'y_axis'=>'Electricity [Watt]', 'y_axis2'=>'Activities');
 
    $sqlq = "SELECT idMeta FROM Meta WHERE Household_idHousehold = '" . $householdID . "' AND DataType = 'E'";
    $r_elec_readings =  mysqli_query($db,$sqlq);
@@ -68,7 +68,7 @@ else
    while($readingID = mysqli_fetch_assoc($r_elec_readings)) {
 
        // MAX value
-        $sqlq = "SELECT dt,Watt FROM Electricity_1min WHERE Meta_idMeta = " . $readingID['idMeta'] . " ORDER BY Watt DESC LIMIT 1";
+        $sqlq = "SELECT dt,Watt FROM Electricity_1min WHERE Watt > 20 AND Meta_idMeta = " . $readingID['idMeta'] . " ORDER BY Watt DESC LIMIT 1";
         $r_eReading = mysqli_query($db,$sqlq);
         $max_eReading = mysqli_fetch_assoc($r_eReading);
         $max_eReading = array("dt"=>$max_eReading['dt'],"Watt"=> round($max_eReading['Watt']), 'label'=>'Peak');
@@ -76,7 +76,7 @@ else
        //  $max_eReading = array_merge($max_eReading, $label_max);
 
        // MIN value
-        $sqlq = "SELECT dt,Watt FROM Electricity_1min WHERE Meta_idMeta = " . $readingID['idMeta'] . " ORDER BY Watt ASC LIMIT 1";
+        $sqlq = "SELECT dt,Watt FROM Electricity_1min WHERE Watt > 20 AND Meta_idMeta = " . $readingID['idMeta'] . " ORDER BY Watt ASC LIMIT 1";
         $r_eReading   = mysqli_query($db,$sqlq);
         $min_eReading = mysqli_fetch_assoc($r_eReading);
         $min_eReading = array("dt"=>$min_eReading['dt'],"Watt"=> round($min_eReading['Watt']), 'label'=>'Min');
@@ -84,13 +84,13 @@ else
         // $min_eReading = array_merge($min_eReading, $label_min);
 
        // AVG value
-        $sqlq = "SELECT AVG(Watt) FROM Electricity_1min WHERE Meta_idMeta = " . $readingID['idMeta'];
+        $sqlq = "SELECT AVG(Watt) FROM Electricity_1min WHERE Watt > 20 AND Meta_idMeta = " . $readingID['idMeta'];
         $r_eReading   = mysqli_query($db,$sqlq);
         $avg_eReading = mysqli_fetch_assoc($r_eReading);
         $avg_eReading = array("Watt"=> round($avg_eReading['AVG(Watt)']), 'label'=>'Mean');
 
         // All 1 min readings
-        $sqlq = "SELECT dt,Watt FROM Electricity_1min WHERE Meta_idMeta = " . $readingID['idMeta'];
+        $sqlq = "SELECT dt,Watt FROM Electricity_1min WHERE Watt > 20 AND Meta_idMeta = " . $readingID['idMeta'];
         $r_eReading =  mysqli_query($db,$sqlq);
         $dt = array();
         $Watt = array();
@@ -111,8 +111,6 @@ else
 
         $reading_dt     = array('dt'=>$dt);
         $reading_Watt   = array('Watt'=>$Watt);
-        $reading_dt_ten = array('dt_ten'=>$dt_ten);
-        $reading_Watt_ten = array('Watt_ten'=>$Watt_ten);
         $reading_labels = array('labels'=>$eLabels);
         $label_max      = array('label'=>'Peak demand');
         $label_min      = array('label'=>'Your baseload');
@@ -123,7 +121,7 @@ else
         $annotations    = array_merge($reading_max, $reading_min, $reading_avg);
         $reading_annotations = array('annotations'=>$annotations);
 
-        $electricityEntry = array_merge($reading_labels,$reading_annotations,$reading_dt_ten,$reading_Watt_ten,$reading_dt,$reading_Watt);
+        $electricityEntry = array_merge($reading_labels,$reading_annotations,$reading_dt,$reading_Watt);
         $output["readings"][] = $electricityEntry;
    }
    echo json_encode($output);
