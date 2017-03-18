@@ -588,11 +588,12 @@ compute_activity_periods_visuals(act_per_zoom, electricity_zoomScaleX.domain(), 
     function append_labels(location_brief, group, scale) {
         var labels_format = d3.timeFormat("%H %M");
         var labels_loc = []; //we define it here, but it will be appended as data
-        _.each(data.timestamps, function(g) {
-            if (location_brief.includes(labels_format(g)) ) {
-                labels_loc.push(g);
-            }
-        })
+        // XXX 'location_brief.includes' caused an error in Firefox, which prevented activities from being shown XXX
+        // _.each(data.timestamps, function(g) {
+        //     if (location_brief.includes(labels_format(g)) ) {
+        //         labels_loc.push(g);
+        //     }
+        // })
         var labels = group.selectAll('labels')
             .data(labels_loc)
             .enter()
@@ -705,7 +706,7 @@ var activity_rects = zoom_activities_instances.append('rect')
 var enjoyment_icons = zoom_activities_instances.append('image')
 .attr("clip-path", "url(#activities_clip)")
 .attr("xlink:href", function(d) {
-    var out = "img/enjoy_" + ((d.activities[0].enjoyment!='undefined')?d.activities[0].enjoyment:"0") + ".png";
+    var out = "img/enjoy_w" + ((d.activities[0].enjoyment!='undefined')?d.activities[0].enjoyment:"0") + ".png";
     return out;
 })
 .attr("x", function(d) { return electricity_zoomScaleX( d.dt_period ) })
@@ -1010,9 +1011,9 @@ function toolbox_label(d){
     // populate the activity box
     var html = formatDayTime(d.dt_period)
         _.each(d.activities,function(act){
-            var enjoy    = "<img src=img/enjoy_"+((act.enjoyment!='undefined')?act.enjoyment:"0")+".png width='40px' height='40px'>"
+            // var enjoy    = "<img src=img/enjoy_"+((act.enjoyment!='undefined')?act.enjoyment:"0")+".png width='40px' height='40px'>"
             var location = "<img src=img/location_"+((act.location!='undefined')?act.location:"0")+".png width='40px' height='40px'>"
-            html += '<br> '+location+' '+enjoy+' ' +act.activity
+            html += '<br> ' + location + ' ' +act.activity
         })
     return html
 } // toolbox label
