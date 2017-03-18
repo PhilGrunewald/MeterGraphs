@@ -124,16 +124,17 @@ text {
 }
 
 div.tooltip {
+/* showing activities on mouse over */
   position: absolute;
   visibility: hidden;
-  padding: 0 10px;
-  background: rgba(105, 185, 105, .8);
-  border: 3px solid #6c6;
+  padding: 15px;
+  background: rgba(60, 100, 60, .8);
+  /*border: 3px solid #6c6;*/
   border-radius: 15px;
   pointer-events: none;
-  font-size: 130%;
+  font-size: 200%;
   color: #fff;
-  opacity: 0;
+  /*opacity: 0;*/
 }
 
 /* FOR LINEGRAPH */
@@ -185,26 +186,51 @@ g.brush>.resize {
 
 /* use "FILL" and not "background-color" */
 .care_self {
-    fill: #cec;
-}
-.care_other {
-    fill: #ace;
-}
-.care_house {
-    fill: #eda;
-}
-.recreation {
-    fill: #ece;
-}
-.travel {
-    fill: #eea;
+    fill: #5a5;
 }
 .food {
-    fill: #cea;
+    fill: #5a5;
+}
+.recreation {
+    fill: #5a5;
+}
+.care_other {
+    fill: #404;
+}
+.care_house {
+    fill: #404;
 }
 .work {
-    fill: #cde;
+    fill: #404;
+}
+.travel {
+    fill: #d66;
 }
 .other_category {
-    fill: #eec;
+    fill: #d66;
 }
+
+
+.color-primary-0 { color: #93A537 }	/* Main Primary color */
+.color-primary-1 { color: #EAF7A5 }
+.color-primary-2 { color: #BDCE67 }
+.color-primary-3 { color: #6B7B15 }
+.color-primary-4 { color: #455200 }
+
+.color-secondary-1-0 { color: #328A2E }	/* Main Secondary color (1) */
+.color-secondary-1-1 { color: #8DCF8A }
+.color-secondary-1-2 { color: #5AAC56 }
+.color-secondary-1-3 { color: #156711 }
+.color-secondary-1-4 { color: #034500 }
+
+.color-secondary-2-0 { color: #A8383B }	/* Main Secondary color (2) */
+.color-secondary-2-1 { color: #FDA8AB }
+.color-secondary-2-2 { color: #D3696C }
+.color-secondary-2-3 { color: #7E1518 }
+.color-secondary-2-4 { color: #540002 }
+
+.color-complement-0 { color: #6C256F }	/* Main Complement color */
+.color-complement-1 { color: #A46FA6 }
+.color-complement-2 { color: #88468A }
+.color-complement-3 { color: #510E53 }
+.color-complement-4 { color: #360037 }
