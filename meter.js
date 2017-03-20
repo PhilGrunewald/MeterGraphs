@@ -376,7 +376,7 @@ electricity_zoom_g.append("clipPath")
     .attr("height", height.zoom + height.spacing + annotation_peak_radius);
 
 var valuePoints = []
-valuePoints.push({ yPoint: data.meta.annotations.max.Watt, xPoint: d3.time.format("%Y-%m-%d %H:%M:%S").parse(data.meta.annotations.max.dt),  label: "Your peak demand"} );
+valuePoints.push({ yPoint: data.meta.annotations.max.Watt, xPoint: d3.time.format("%Y-%m-%d %H:%M:%S").parse(data.meta.annotations.max.dt),  label: "Most intensive hour"} );
 valuePoints.push({ yPoint: data.meta.annotations.min.Watt, xPoint: d3.time.format("%Y-%m-%d %H:%M:%S").parse(data.meta.annotations.min.dt),  label: "Your lowest demand"} );
 if (draw_value_points) {
     var myvaluePoints = electricity_zoom_g.selectAll('.rect')
@@ -393,7 +393,7 @@ if (draw_value_points) {
             } else {return "";}
         })
     .attr('dy', '-0.5em')
-        .attr('text-anchor', 'middle')
+        .attr('text-anchor', 'start')
         .attr('class', 'annotation-peak');
 
     var myvaluePointsCircles = electricity_zoom_g.selectAll('.circ')

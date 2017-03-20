@@ -67,11 +67,20 @@ else
    $readingsCount = 0;
    while($readingID = mysqli_fetch_assoc($r_elec_readings)) {
 
-       // MAX value
-        $sqlq = "SELECT dt,Watt FROM Electricity_1min WHERE Watt > 20 AND Meta_idMeta = " . $readingID['idMeta'] . " ORDER BY Watt DESC LIMIT 1";
+       // MAX value over one hour
+	// 20 Mar 2017: changed from peak incident to a 10 minute rolling aveage for the next hour 
+        // $sqlq = "SELECT dt,Watt FROM Electricity_1min WHERE Watt > 20 AND Meta_idMeta = " . $readingID['idMeta'] . " ORDER BY Watt DESC LIMIT 1";
+	$sqlq = "SELECT dt,WattHour FROM (
+		select E.dt, E.Watt, avg(pastE.Watt) AS WattHour
+		from Electricity_10min AS E
+		join Electricity_10min as pastE
+		  on pastE.dt between E.dt and E.dt + INTERVAL 1 HOUR
+		  AND pastE.Meta_idMeta = " . $readingID['idMeta'] . "
+		  AND E.Meta_idMeta =  " . $readingID['idMeta'] . "
+		group by 1, 2) AS RollingAverage ORDER BY WattHour DESC LIMIT 1;";
         $r_eReading = mysqli_query($db,$sqlq);
         $max_eReading = mysqli_fetch_assoc($r_eReading);
-        $max_eReading = array("dt"=>$max_eReading['dt'],"Watt"=> round($max_eReading['Watt']), 'label'=>'Peak');
+        $max_eReading = array("dt"=>$max_eReading['dt'],"Watt"=> round($max_eReading['WattHour']), 'label'=>'Peak');
         // $label_max      = array('label'=>'Peak');
        //  $max_eReading = array_merge($max_eReading, $label_max);
 
