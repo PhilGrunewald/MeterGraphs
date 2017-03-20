@@ -588,6 +588,13 @@ compute_activity_periods_visuals(act_per_zoom, electricity_zoomScaleX.domain(), 
     function append_labels(location_brief, group, scale) {
         var labels_format = d3.timeFormat("%H %M");
         var labels_loc = []; //we define it here, but it will be appended as data
+        _.each(location_brief, function(loc) {
+            _.each(data.timestamps, function(g) {
+                if (labels_format(g) == loc) {
+                    labels_loc.push(g);
+                }
+            })
+        })
         // XXX 'location_brief.includes' caused an error in Firefox, which prevented activities from being shown XXX
         // _.each(data.timestamps, function(g) {
         //     if (location_brief.includes(labels_format(g)) ) {
