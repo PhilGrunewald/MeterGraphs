@@ -30,12 +30,29 @@
    $fromEl = "FROM Electricity_1min WHERE Watt > 20 AND Meta_idMeta = " . $idMeta;
    $fromAll = "FROM Electricity_1min WHERE Watt > 20"; 
 
-   // HH Peak 
-   $sqlq = "SELECT dt,Watt " . $fromEl . " ORDER BY Watt DESC LIMIT 1";
-   $q = mysqli_query($db,$sqlq);
-   $f = mysqli_fetch_assoc($q);
+   // HH Peak - SUPERSEEDED by Peak Hour
+   // $sqlq = "SELECT dt,Watt " . $fromEl . " ORDER BY Watt DESC LIMIT 1";
+   // $q = mysqli_query($db,$sqlq);
+   // $f = mysqli_fetch_assoc($q);
+   // $dtPeak = $f['dt'];
+   // $peak   = round($f['Watt']);
+
+	
+   // HH Peak hour
+   $sqlq = "SELECT dt,WattHour FROM (
+   	select E.dt, E.Watt, avg(pastE.Watt) AS WattHour
+   	from Electricity_10min AS E
+   	join Electricity_10min as pastE
+   	  on pastE.dt between E.dt and E.dt + INTERVAL 1 HOUR
+   	  AND pastE.Meta_idMeta = " . $idMeta . "
+   	  AND E.Meta_idMeta =  " . $idMeta . "
+   	group by 1, 2) AS RollingAverage ORDER BY WattHour DESC LIMIT 1;";
+   $r_eReading = mysqli_query($db,$sqlq);
+   $f = mysqli_fetch_assoc($r_eReading);
    $dtPeak = $f['dt'];
-   $peak   = round($f['Watt']);
+   $peak   = round($f['WattHour']);
+
+
 	date_default_timezone_set('UTC');
 	$dtPeakDate = date_create($dtPeak); 
 	$peakday = date_format($dtPeakDate, 'l'); 
@@ -65,7 +82,7 @@
 	while ($result = mysqli_fetch_assoc($results)) {
 		$peakAppliances[] = $result['activity'];
 		}
-	
+
    // HH Average
    $sqlq = "SELECT AVG(Watt) as mean " . $fromEl ;
    $q = mysqli_query($db,$sqlq);
@@ -86,6 +103,9 @@
    $q = mysqli_query($db,$sqlq);
    $f = mysqli_fetch_assoc($q);
    $peakAll = round($f['peakAll']);
+
+
+
 
    // Average all
    $sqlq = "SELECT AVG(Watt) as meanAll " . $fromAll ;
@@ -133,12 +153,12 @@ This baseload mostly depends on stand-by devices and things that are always on (
 </div>
 
   <div class="col-xs-12 col-sm-6 col-md-4 rounded-box">
-<p>The highest recorded electricity use occurred on <?php echo $peakday; ?> at <b> <?php echo $peaktime; ?> (<?php echo $peak; ?> W)</b>.  
+<p>The hour with most electricity use started on <?php echo $peakday; ?> at <b> <?php echo $peaktime; ?></b> (<b><?php echo $peak; ?> W</b> on average).  
 </p><p>
 
 <?php
 if (count($peakAppliances) < 1) {
-	echo "Do you remember which appliances might have been in use at this point?";
+	echo "Do you remember which appliances might have been in use in that hour?";
 	$appLabel = "Can't remember";
 } else {
 	echo "You used: <b>";
