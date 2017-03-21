@@ -71,13 +71,13 @@ else
 	// 20 Mar 2017: changed from peak incident to a 10 minute rolling aveage for the next hour 
         // $sqlq = "SELECT dt,Watt FROM Electricity_1min WHERE Watt > 20 AND Meta_idMeta = " . $readingID['idMeta'] . " ORDER BY Watt DESC LIMIT 1";
 	$sqlq = "SELECT dt,WattHour FROM (
-		select E.dt, E.Watt, sum(E_hour.Watt) AS SumHour,avg(E_hour.Watt) AS WattHour
+		select E.dt, sum(E_hour.Watt) AS SumHour,avg(E_hour.Watt) AS WattHour
 		from Electricity_10min AS E
 		join Electricity_10min as E_hour
 		  on E_hour.dt between E.dt and E.dt + INTERVAL 1 HOUR
 		  AND E_hour.Meta_idMeta = " . $readingID['idMeta'] . "
 		  AND E.Meta_idMeta =  " . $readingID['idMeta'] . "
-		group by 1, 2) AS RollingAverage ORDER BY SumHour DESC LIMIT 1;";
+		group by 1) AS RollingAverage ORDER BY SumHour DESC LIMIT 1;";
         $r_eReading = mysqli_query($db,$sqlq);
         $max_eReading = mysqli_fetch_assoc($r_eReading);
         $max_eReading = array("dt"=>$max_eReading['dt'],"Watt"=> round($max_eReading['WattHour']), 'label'=>'Peak');
