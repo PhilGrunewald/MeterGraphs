@@ -40,13 +40,15 @@
 	
    // HH Peak hour
    $sqlq = "SELECT dt,WattHour FROM (
-   	select E.dt, E.Watt, avg(pastE.Watt) AS WattHour
-   	from Electricity_10min AS E
-   	join Electricity_10min as pastE
-   	  on pastE.dt between E.dt and E.dt + INTERVAL 1 HOUR
-   	  AND pastE.Meta_idMeta = " . $idMeta . "
-   	  AND E.Meta_idMeta =  " . $idMeta . "
-   	group by 1, 2) AS RollingAverage ORDER BY WattHour DESC LIMIT 1;";
+	SELECT E.dt, E.Watt, SUM(E_hour.Watt) AS SumHour,AVG(E_hour.Watt) AS WattHour
+	FROM Electricity_10min AS E
+	JOIN Electricity_10min as E_hour
+	  ON E_hour.dt between E.dt and E.dt + INTERVAL 1 HOUR
+	  AND E_hour.Meta_idMeta = " . $idMeta . "
+	  AND E.Meta_idMeta =  " . $idMeta . "
+	GROUP BY 1, 2)
+	AS RollingAverage 
+	ORDER BY SumHour DESC LIMIT 1;";
    $r_eReading = mysqli_query($db,$sqlq);
    $f = mysqli_fetch_assoc($r_eReading);
    $dtPeak = $f['dt'];
@@ -96,6 +98,9 @@
    $dtBaseload = $f['dt'];
    $baseload   = round($f['Watt']);
 
+	$dtMinDate = date_create($dtBaseload); 
+	$minday = date_format($dtMinDate, 'l'); 
+	$mintime = date_format($dtMinDate, 'H:m'); 
 
    // Peak all
    // $sqlq = "SELECT AVG(peakloads) as peakAll FROM peakloads";
@@ -128,32 +133,33 @@
   <p>Thank you for contributing your data to this study. Here is your load profile. </p>
 <p>
   <div class="col-xs-12 col-sm-6 col-md-4 rounded-box">
-Your <b>average</b></br> use has been <b><?php echo $mean; ?> Watt</b>, compared to <?php echo $meanAll; ?> W across our participants.
+<h3>Minimum <?php echo $baseload; ?>W</h3>
+<p>Your lowest electricity use was on <?php echo $minday; ?> at <?php echo $mintime; ?>.
+<?php if ($baseload > $baseloadAll) {
+		echo " This is higher than the average (".$baseloadAll."W)";
+		if ($baseload < (1.4 * $baseloadAll)) {
+			echo ", but not by much, ";
+		} else {
+			echo ", ";
+		}
+	} else {
+		echo " This is lower than our average participant (".$baseloadAll."W), ";
+	}
+?>
+and mostly depends on stand-by devices and things that are always on (fridges, broadband routers...).</p>
+</div>
+  <div class="col-xs-12 col-sm-6 col-md-4 rounded-box">
+<h3>Average <?php echo $mean; ?>W</h3> compared to <?php echo $meanAll; ?>W across our participants.
 <?php if ($mean < 0.8*$meanAll) {echo " You are doing well.";}
  else if ($mean < 1.2*$meanAll) {echo " So your are quite typical.";}
  else {echo " Note that there is a lot of variation, depending on household size, type of appliances and activity levels (which is part of what we try to understand with this study).";}
 ?>
 </div>
 
-  <div class="col-xs-12 col-sm-6 col-md-4 rounded-box">
-<p>Your <b>baseload</b> is perhaps more informative. The lowest reading over these 28 hours was 
-<?php echo "<b>".$baseload; 
-	if ($baseload > $baseloadAll) {
-		echo " W</b>. This is higher than the average ($baseloadAll W)";
-		if ($baseload < (1.4 * $baseloadAll)) {
-			echo ", but not by much. ";
-		} else {
-			echo ". ";
-		}
-	} else {
-		echo " W</b>. You have done better than our average participant ($baseloadAll W). ";
-	}
-?>
-This baseload mostly depends on stand-by devices and things that are always on (fridges, broadband routers...).</p>
-</div>
 
   <div class="col-xs-12 col-sm-6 col-md-4 rounded-box">
-<p>The hour with most electricity use started on <?php echo $peakday; ?> at <b> <?php echo $peaktime; ?></b> (<b><?php echo $peak; ?> W</b> on average).  
+<h3>Max <?php echo $peak; ?>W</h3>
+<p>Your hour with the highest use started on <?php echo $peakday; ?> at <b> <?php echo $peaktime; ?></b>. 
 </p><p>
 
 <?php
