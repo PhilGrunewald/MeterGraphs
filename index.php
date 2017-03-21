@@ -50,15 +50,15 @@
 	AS RollingAverage 
 	ORDER BY SumHour DESC LIMIT 1;";
    $r_eReading = mysqli_query($db,$sqlq);
-   $f = mysqli_fetch_assoc($r_eReading);
-   $dtPeak = $f['dt'];
-   $peak   = round($f['WattHour']);
+   $f_peak = mysqli_fetch_assoc($r_eReading);
+   $dtPeak = $f_peak['dt'];
+   $peak   = round($f_peak['WattHour']);
 
 
 	date_default_timezone_set('UTC');
 	$dtPeakDate = date_create($dtPeak); 
 	$peakday = date_format($dtPeakDate, 'l'); 
-	$peaktime = date_format($dtPeakDate, 'H:m'); 
+	$peaktime = date_format($dtPeakDate, 'H:i'); 
 
 	// add peak time appliances
 	//
@@ -100,7 +100,7 @@
 
 	$dtMinDate = date_create($dtBaseload); 
 	$minday = date_format($dtMinDate, 'l'); 
-	$mintime = date_format($dtMinDate, 'H:m'); 
+	$mintime = date_format($dtMinDate, 'H:i'); 
 
    // Peak all
    // $sqlq = "SELECT AVG(peakloads) as peakAll FROM peakloads";
