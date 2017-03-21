@@ -310,13 +310,13 @@ data.energy.sort(compare);
                                     .attr('text-anchor', 'middle')            //to appear in the middle of the green box
                                     .attr("y", y - height.zoom - height.el_reading_boxes)
                                     .text(dayOfWeek[this_time.getDay()] +" "+ this_time.getHours() + ":" + ("0" + this_time.getMinutes()).slice(-2))
-                                    .style("font-size", "20")
+                                    .style("font-size", "20px")
                                 el_reading_watt
                                     .attr("x",x)
                                     .attr('text-anchor', 'middle')            //to appear in the middle of the green box
                                     .attr("y", y - height.zoom - height.el_reading_boxes)
                                     .text(data.energy[ind].watt + " Watt")
-                                    .style("font-size", "30")
+                                    .style("font-size", "30px")
                             })
                             .on('mouseout', function(){
                                 el_reading_rect.attr("width", 0).attr("height", 0);
@@ -353,6 +353,7 @@ data.energy.sort(compare);
                     .attr('y1', electricity_zoomScaleY.range()[1] - electricity_zoomScaleY(value.lineValue))
                     .attr('x2', electricity_zoomScaleX.range()[1])
                     .attr('y2', electricity_zoomScaleY.range()[1] - electricity_zoomScaleY(value.lineValue))
+                    .style("stroke","#bdbdbd")
                     .attr('class', 'annotationline');
                 electricity_zoom_g.append('text')
                     .attr('x', electricity_zoomScaleX.range()[1])
@@ -375,7 +376,7 @@ electricity_zoom_g.append("clipPath")
     .attr("width", width.electricity + 160)
     .attr("height", height.zoom + height.spacing + annotation_peak_radius);
 
-var valuePoints = []
+valuePoints = []
 valuePoints.push({ yPoint: data.meta.annotations.max.Watt, xPoint: d3.time.format("%Y-%m-%d %H:%M:%S").parse(data.meta.annotations.max.dt),  label: "Most intensive hour"} );
 valuePoints.push({ yPoint: data.meta.annotations.min.Watt, xPoint: d3.time.format("%Y-%m-%d %H:%M:%S").parse(data.meta.annotations.min.dt),  label: "Your lowest demand"} );
 if (draw_value_points) {
@@ -396,8 +397,9 @@ if (draw_value_points) {
         .attr('text-anchor', 'start')
         .attr('class', 'annotation-peak');
 
+    var valuePoints_circles = valuePoints.filter(function(d) {if (d.label != "Most intensive hour") {return d}})
     var myvaluePointsCircles = electricity_zoom_g.selectAll('.circ')
-        .data(valuePoints)
+        .data(valuePoints_circles)
         .enter()
         .append('circle')
         .attr("clip-path", "url(#clip)")
@@ -405,12 +407,53 @@ if (draw_value_points) {
         .attr('cx', function(d){return electricity_zoomScaleX(d.xPoint);})
         .attr('r', annotation_peak_radius)
         .attr('class', 'annotation-peak-circles');
+
+    //PLOTTING LINES: add to the vector below
+    var plot_with_range_lines = ["Most intensive hour"] //add here labels of variables that we want to be plotted with lines
+    var valuePoints_lines = valuePoints.filter(function(d) {if (plot_with_range_lines.indexOf(d.label)!=-1) {return d}})
+    var myvaluePointsLines = electricity_zoom_g.selectAll('.VPlines')
+        .data(valuePoints_lines)
+        .enter()
+        .append('g') //Groups because we want not just a line, but a range, i.e. horisontal line with two vertical lines at ends
+        .attr('class', 'annotation-peak-range')
+        .attr("clip-path", "url(#clip)");
+
+    var vertical_line_radius = 5;
+    //HORISONTAL LINE
+    myvaluePointsLines.append('line')
+    .attr('x1', function(d) {return electricity_zoomScaleX(d.xPoint)})
+    .attr('y1', function(d){return electricity_zoomScaleY.range()[1] - electricity_zoomScaleY(d.yPoint);})
+    .attr('x2', function(d){return electricity_zoomScaleX(plus1hour(d.xPoint))})
+    .attr('y2', function(d){return electricity_zoomScaleY.range()[1] - electricity_zoomScaleY(d.yPoint);})
+    .attr('class', 'annotation-peak-range-horisontal');
+    //LEFT VERTICAL LINE
+    myvaluePointsLines.append('line')
+    .attr('x1', function(d) {return electricity_zoomScaleX(d.xPoint)})
+    .attr('y1', function(d){return (electricity_zoomScaleY.range()[1] - electricity_zoomScaleY(d.yPoint) + vertical_line_radius);})
+    .attr('x2', function(d) {return electricity_zoomScaleX(d.xPoint)})
+    .attr('y2', function(d){return (electricity_zoomScaleY.range()[1] - electricity_zoomScaleY(d.yPoint) - vertical_line_radius);})
+    .attr('class', 'annotation-peak-range-vertical-left');
+    //RIGHT VERTICAL LINE
+    myvaluePointsLines.append('line')
+    .attr('x1', function(d){return electricity_zoomScaleX(plus1hour(d.xPoint))})
+    .attr('y1', function(d){return (electricity_zoomScaleY.range()[1] - electricity_zoomScaleY(d.yPoint) + vertical_line_radius);})
+    .attr('x2', function(d){return electricity_zoomScaleX(plus1hour(d.xPoint))})
+    .attr('y2', function(d){return (electricity_zoomScaleY.range()[1] - electricity_zoomScaleY(d.yPoint) - vertical_line_radius);})
+    .attr('class', 'annotation-peak-range-vertical-right');
 }
 
-
+//returns time one hour ahead
+function plus1hour(time) {
+    var initialPointInAbsTime = time.getTime();
+    var after1HourInAbsTime = initialPointInAbsTime + 60*60*1000;
+    return after1HourInDateFormat = new Date(after1HourInAbsTime);
+}
 
 //============ Create activities graph ============
-process_activities();
+process_activities(); //creates data.activities and data.periods - FOR DRAWING SQUARES WITH ACTIVITIES
+process_activities_with_endpoints(); //creates data.activities_including_proxy and data.periods_including_proxy - FOR DRAWING RECTANGLES BETWEEN ACTIVITIES
+
+//creates data.activities and data.periods
 function process_activities() {
     data.activities = []
         var periods = {}
@@ -433,14 +476,83 @@ function process_activities() {
         _.each(periods,function(period){ data.periods.push(period) })
 }
 
+//creates data.activities_including_proxy and data.periods_including_proxy
+function process_activities_with_endpoints() {
+    data.activities_periods = []
+        var periods = {}
+    _.each(data.users, function(user){
+        var first_act_time = electricityScaleX.domain()[1],
+             last_act_time = electricityScaleX.domain()[0],
+             first_act, last_act;
+        _.each(user.activities,function(act){
+            if((act.dt_activity >= electricityScaleX.domain()[0]) && (act.dt_activity <= electricityScaleX.domain()[1])){
+                if (act.dt_activity <= first_act_time) {
+                    first_act = act.idActivities;
+                    first_act_time = act.dt_activity;
+                }
+                if (act.dt_activity >= last_act_time) {
+                    last_act = act.idActivities;
+                    last_act_time = act.dt_activity;
+                }
+                var bin = act.period+'_'+act.idMeta;
+                if(!periods.hasOwnProperty(bin)) periods[bin] = {
+                    "dt_period": act.dt_period,
+                    "idMeta": act.idMeta,
+                    //"dotcolour": act.dotcolour,
+                    "category": act.category,
+                    "activities": []    }
+                data.activities_periods.push(act)
+                    periods[bin].activities.push(act)
+            }
+        })
+        _.each(user.activities,function(act) {
+            if (act.idActivities == first_act) {
+                if (first_act_time > electricityScaleX.domain()[0]) { //only if it's greater than starting point
+                    var proxy_bin = electricityScaleX.domain()[0] + '_' + act.idMeta;
+                    periods[proxy_bin] = {
+                        "dt_period": electricityScaleX.domain()[0],
+                        "idMeta": act.idMeta,
+                        //"dotcolour": act.dotcolour,
+                        "category": act.category,
+                        "activities": [],
+                        "label":"initial_proxy_bin"
+                    }
+                    var proxy_act = act;
+                    proxy_act["dt_period"] = electricityScaleX.domain()[0]
+                    proxy_act["dt_activity"] = electricityScaleX.domain()[0]
+                    periods[proxy_bin].activities.push(proxy_act)
+                }
+            }
+            if (act.idActivities == last_act) {
+                if (last_act_time < electricityScaleX.domain()[1]) { //only if it's less than finishing point
+                    var proxy_bin = electricityScaleX.domain()[1] + '_' + act.idMeta;
+                    periods[proxy_bin] = {
+                        "dt_period": electricityScaleX.domain()[1],
+                        "idMeta": act.idMeta,
+                        //"dotcolour": act.dotcolour,
+                        "category": act.category,
+                        "activities": [],
+                        "label":"final_proxy_bin"
+                    }
+                    var proxy_act = act;
+                    proxy_act["dt_period"] = electricityScaleX.domain()[1]
+                    proxy_act["dt_activity"] = electricityScaleX.domain()[1]
+                    periods[proxy_bin].activities.push(proxy_act)
+                }
+            }
+        })
+    })
+    data.periods_including_proxy = []
+        _.each(periods,function(period){ data.periods_including_proxy.push(period) })
+}
 
-//draw activity periods
+//draw activity periods - RECTANGLES
 act_per = create_activity_periods();
 compute_activity_periods_visuals(act_per, electricityScaleX.domain(), "normal");
 
 function create_activity_periods() {
     var activity_periods = [], next_activity;
-    data.periods.forEach(function(this_activity){
+    data.periods_including_proxy.forEach(function(this_activity){
         next_activity = find_next_user_activity(this_activity);
         if (next_activity) {
             var activity_period = {
@@ -487,7 +599,7 @@ function compute_activity_periods_visuals(activity_periods, domain, graph) {
 function find_next_user_activity(d) { //for when d is an element of data.periods
     var next_user_activity = false;
     var time_next_activity = electricityScaleX.domain()[1]; //Since have to look outside the zoomed-in area as well
-    data.periods.forEach(function(g) {//Note here we search through ALL the activity list, not just the domain of this graph.
+    data.periods_including_proxy.forEach(function(g) {//Note here we search through ALL the activity list, not just the domain of this graph.
         //If searching within this domain, use "data.periods.forEach"
         if (g.idMeta == d.idMeta) {
             if ( (g.dt_period > d.dt_period) &&
@@ -499,7 +611,8 @@ function find_next_user_activity(d) { //for when d is an element of data.periods
     })
     return next_user_activity;
 }
-
+    
+    //ACTIVITY PERIODS, IN A SERIOUS MISNOMA, ARE THE LONG RECTANGLES BETWEEN ACTIVITIES' SQUARES. THEY ARE DRAWN USING DATA.PERIODS_INCLUDING_PROXY. PROXY MAKES IT GO FROM INITIAL TIME TO FINAL TIME OF EXPERIMENT, RATHER THAN FIRST/LAST ACTIVITY
     var activities_periods = activities_g.selectAll('.activity_periods')
     .data(act_per)
 .enter()
@@ -513,7 +626,7 @@ function find_next_user_activity(d) { //for when d is an element of data.periods
 
 
 
-
+    //ACTIVITIES, I.E. SQUARES, ARE DRAWN USING DATA.PERIODS (A SQUARE IS A PERIOD)
     //draw activities
     var activities_instances = activities_g.selectAll('activities_instances')
     .data(data.periods)
@@ -626,7 +739,7 @@ compute_activity_periods_visuals(act_per_zoom, electricity_zoomScaleX.domain(), 
                 .attr('x', function(d) {return scale(d); }) //x is set explictly, at each text (hour and am/pm),
             //rather than doing the overall transform on g, since when the zoom window moves the corresponding
             //transform would have had to be computed as the difference, rather than an absolute scalex value as done now
-            .style("font-size", "80")
+            .style("font-size", "80px")
                 .style("fill","#666")
                 .style("text-anchor", "end")
                 .text(function(d){
@@ -640,7 +753,7 @@ compute_activity_periods_visuals(act_per_zoom, electricity_zoomScaleX.domain(), 
                 .attr("clip-path", "url(#temp)")
                 .attr('x', function(d) {return scale(d); })
                 .style("text-anchor", "start")
-                .style("font-size", "20")
+                .style("font-size", "20px")
                 .attr("fill","#666")
                 .text(function(d){
                     var format = d3.time.format('%-I %p');
@@ -661,7 +774,7 @@ compute_activity_periods_visuals(act_per_zoom, electricity_zoomScaleX.domain(), 
                 })
             .text(function(d){
                 return ( (format(d) == "12 AM")?format_weekday(d):format(d));})
-                .style("font-size", "20")
+                .style("font-size", "20px")
                 .attr("fill","#666")
 
                 my_labels.push(my_labels_complete);
@@ -891,6 +1004,15 @@ function make_brush(){
                 })
             electricity_zoom_g.selectAll('.annotation-peak-circles').transition().duration(1000).attr('cx', function(d){return electricity_zoomScaleX(d.xPoint);})
                 enjoyment_icons.transition().duration(1000).attr('x', function(d) { return electricity_zoomScaleX( d.dt_period ) })
+            electricity_zoom_g.selectAll('.annotation-peak-range-horisontal').transition().duration(1000)
+            .attr('x1', function(d){return electricity_zoomScaleX(d.xPoint);})
+            .attr('x2', function(d){return electricity_zoomScaleX(plus1hour(d.xPoint))})
+            electricity_zoom_g.selectAll('.annotation-peak-range-vertical-left').transition().duration(1000)
+            .attr('x1', function(d) {return electricity_zoomScaleX(d.xPoint)})
+            .attr('x2', function(d) {return electricity_zoomScaleX(d.xPoint)})
+            electricity_zoom_g.selectAll('.annotation-peak-range-vertical-right').transition().duration(1000)
+            .attr('x1', function(d){return electricity_zoomScaleX(plus1hour(d.xPoint))})
+            .attr('x2', function(d){return electricity_zoomScaleX(plus1hour(d.xPoint))})
         })
 
     activities_g.append("g")
@@ -941,6 +1063,15 @@ function make_brush(){
                 } else {return "";}
             })
         electricity_zoom_g.selectAll('.annotation-peak-circles').attr('cx', function(d){return electricity_zoomScaleX(d.xPoint);})
+            electricity_zoom_g.selectAll('.annotation-peak-range-horisontal')
+            .attr('x1', function(d){return electricity_zoomScaleX(d.xPoint);})
+            .attr('x2', function(d){return electricity_zoomScaleX(plus1hour(d.xPoint))})
+            electricity_zoom_g.selectAll('.annotation-peak-range-vertical-left')
+            .attr('x1', function(d) {return electricity_zoomScaleX(d.xPoint)})
+            .attr('x2', function(d) {return electricity_zoomScaleX(d.xPoint)})
+            electricity_zoom_g.selectAll('.annotation-peak-range-vertical-right')
+            .attr('x1', function(d){return electricity_zoomScaleX(plus1hour(d.xPoint))})
+            .attr('x2', function(d){return electricity_zoomScaleX(plus1hour(d.xPoint))})
     }
 
     //=============== Dragging functionality ===============
@@ -974,6 +1105,7 @@ function make_brush(){
     electricity_zoom_g.call(drag);
 
     //============================================================
+
 
     function DefineExtent(timestamp) {
         var center = timestamp.getTime();
