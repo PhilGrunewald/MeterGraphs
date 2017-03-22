@@ -65,14 +65,16 @@
 	if(isset($_GET['a2'])){ 
 		// add manually typed appliance
 		$a2 = $_GET['a2'];
-		$sqlq= "INSERT INTO Activities (`Meta_idMeta`,`dt_activity`,`activity`) VALUES ('".$idMeta."','".$dtPeak."','".$a2."')";
+		$dt_rec = date("Y-m-d H:i:s");
+		$sqlq= "INSERT INTO Activities (`Meta_idMeta`,`dt_activity`,`dt_recorded`,`activity`) VALUES ('".$idMeta."','".$dtPeak."','".$dt_rec."','".$a2."')";
        	mysqli_query($db, $sqlq);
 	}
 	if(isset($_GET['a1'])){ 
 		// add appliance
 		$a1 = $_GET['a1'];
+		$dt_rec = date("Y-m-d H:i:s");
 		if ($a1 != "Other") {
-			$sqlq= "INSERT INTO Activities (`Meta_idMeta`,`dt_activity`,`activity`) VALUES ('".$idMeta."','".$dtPeak."','".$a1."')";
+			$sqlq= "INSERT INTO Activities (`Meta_idMeta`,`dt_activity`,`dt_recorded`,`activity`) VALUES ('".$idMeta."','".$dtPeak."','".$dt_rec."','".$a1."')";
         	mysqli_query($db, $sqlq);
 		}
 	}
