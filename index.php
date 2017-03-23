@@ -3,18 +3,20 @@
 <head>
   <meta charset="utf-8">
   <title>METER - Energy-use.org</title>
-  <link rel="stylesheet" type="text/css" href="libs/bootstrap.min.css">
   <link rel="stylesheet" type="text/css" href="meter.css">
-  <script src="libs/d3.v3.js"></script>
-	<script src="libs/lodash.js"></script>
-  <script src="libs/jquery-2.2.1.min.js"></script>
-  <script src="libs/bootstrap.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="../libs/bootstrap.min.css">
+  <script src="../libs/d3.v3.js"></script>
+  <script src="../libs/lodash.js"></script>
+  <script src="../libs/jquery-2.2.1.min.js"></script>
+  <script src="../libs/bootstrap.min.js"></script>
+  <script src="../libs/d3.min.js"></script>
+  <!-- 
   <script src="https://d3js.org/d3.v4.min.js"></script>
-  <!-- <script type="text/javascript" src="d3/d3.js"></script> -->
+<script type="text/javascript" src="d3/d3.js"></script> -->
 </head>
 <body>
   <?php
-    $id='7936';
+    $id='7989';
     if(isset($_GET['id'])){ $id = $_GET['id']; }
     echo '<script>var hhid = "'.$id.'";</script>';
 	include('_nav_bar_yourdata.php');
@@ -261,11 +263,11 @@ if (count($peakAppliances) < 1) {
               <div class="form-group">
                 <label class="col-sm-3 control-label" for="enjoyment">Enjoyment</label>
                 <div class="col-sm-6">
-                    <input type="radio" name="enjoyment" id="enjoyment_1" value="1"> <img src=img/enjoy_1.png width='20px' height='20px'>
-                    <input type="radio" name="enjoyment" id="enjoyment_2" value="2"> <img src=img/enjoy_2.png width='20px' height='20px'>
-                    <input type="radio" name="enjoyment" id="enjoyment_3" value="3"> <img src=img/enjoy_3.png width='20px' height='20px'>
-                    <input type="radio" name="enjoyment" id="enjoyment_4" value="4"> <img src=img/enjoy_4.png width='20px' height='20px'>
-                    <input type="radio" name="enjoyment" id="enjoyment_5" value="5"> <img src=img/enjoy_1.png width='20px' height='20px'><br></div></div>
+                    <input type="radio" name="enjoyment" id="enjoyment_1" value="1"> <img src=../img/enjoy_1.png width='20px' height='20px'>
+                    <input type="radio" name="enjoyment" id="enjoyment_2" value="2"> <img src=../img/enjoy_2.png width='20px' height='20px'>
+                    <input type="radio" name="enjoyment" id="enjoyment_3" value="3"> <img src=../img/enjoy_3.png width='20px' height='20px'>
+                    <input type="radio" name="enjoyment" id="enjoyment_4" value="4"> <img src=../img/enjoy_4.png width='20px' height='20px'>
+                    <input type="radio" name="enjoyment" id="enjoyment_5" value="5"> <img src=../img/enjoy_1.png width='20px' height='20px'><br></div></div>
 
               </form>
           <div id='errormsg'></div>
