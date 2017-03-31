@@ -37,6 +37,34 @@ svg {
 	stroke: none;
 }
 
+.enj_0 {
+  fill: #bababa;
+}
+.enj_1 {
+  fill: #d7191c;
+}
+.enj_2 {
+  fill: #fdae61;
+}
+.enj_3 {
+  fill: #ffffbf;
+}
+.enj_4 {
+  fill: #a6d96a;
+}
+.enj_5 {
+  fill: #1a9641;
+}
+
+
+/*
+#scatterGraph_activities > .axis line {
+  fill: none;
+  stroke-opacity="0.2"
+  shape-rendering: crispEdges;
+}
+*/
+
 .brush .extent {
   stroke: #090;
   fill: #fff;
