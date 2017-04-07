@@ -3,23 +3,16 @@
 <head>
   <meta charset="utf-8">
   <title>METER - Energy-use.org</title>
-  <link rel="stylesheet" type="text/css" href="meter.css">
-  <link rel="stylesheet" type="text/css" href="../libs/bootstrap.min.css">
-  <script src="../libs/d3.v3.js"></script>
-  <script src="../libs/lodash.js"></script>
-  <script src="../libs/jquery-2.2.1.min.js"></script>
-  <script src="../libs/bootstrap.min.js"></script>
-  <script src="../libs/d3.min.js"></script>
-  <!-- 
-  <script src="https://d3js.org/d3.v4.min.js"></script>
-<script type="text/javascript" src="d3/d3.js"></script> -->
+  <link rel="stylesheet" type="text/css" href="../css/meter.css">
+  <link rel="stylesheet" type="text/css" href="../css/bootstrap.min.css">
+  <?php include('../libs/libs.php'); ?>
 </head>
 <body>
   <?php
     $id='7989';
     if(isset($_GET['id'])){ $id = $_GET['id']; }
     echo '<script>var hhid = "'.$id.'";</script>';
-	include('_nav_bar_yourdata.php');
+	include('../_nav_bar_subfolder.php');
 	include('../db.php');
 	$db = mysqli_connect($server,$dbUserName,$dbUserPass,$dbName);
 
@@ -27,7 +20,6 @@
    $q_idMeta = mysqli_query($db,$sqlq);
    $f_idMeta = mysqli_fetch_assoc($q_idMeta);
    $idMeta   = $f_idMeta['idMeta'];
-   
 
    $fromEl = "FROM Electricity_1min WHERE Watt > 20 AND Meta_idMeta = " . $idMeta;
    $fromAll = "FROM Electricity_1min WHERE Watt > 20"; 
@@ -226,7 +218,7 @@ if (count($peakAppliances) < 1) {
 <span class="work colour-key"> Work </span> 
 <span class="other_category colour-key"> Other </span> 
 </p>
-  <script type="text/javascript" src="meter.js"></script>
+  <script type="text/javascript" src="../D3/HHactPower.js"></script>
 
   <!-- Modal for Users -->
   <div class="modal fade" id="modalActivity" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">

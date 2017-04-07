@@ -3,18 +3,13 @@
 <head>
   <meta charset="utf-8">
   <title>METER - Energy-use.org</title>
-  <link rel="stylesheet" type="text/css" href="libs/bootstrap.min.css">
-  <link rel="stylesheet" type="text/css" href="meter.css">
-  <script src="libs/d3.v3.js"></script>
-	<script src="libs/lodash.js"></script>
-  <script src="libs/jquery-2.2.1.min.js"></script>
-  <script src="libs/bootstrap.min.js"></script>
-  <script src="https://d3js.org/d3.v4.min.js"></script>
-  <!-- <script type="text/javascript" src="d3/d3.js"></script> -->
+  <link rel="stylesheet" type="text/css" href="../css/bootstrap.min.css">
+  <link rel="stylesheet" type="text/css" href="../css/meter.css">
+  <?php include('../libs/libs.php'); ?>
 </head>
 <body>
   <?php
-	include('_nav_bar_yourdata.php');
+	include('../_nav_bar_subfolder.php');
 	include('../db.php');
 	$db = mysqli_connect($server,$dbUserName,$dbUserPass,$dbName);
 	if (isset($_GET['id'])) { 
@@ -56,6 +51,12 @@
    $q = mysqli_query($db,$sqlq);
    $f = mysqli_fetch_assoc($q);
    $id   = $f['id'];
+
+    // SECURITY 
+ 	if ($_GET['sc'] != 3274) { 
+ 		$_GET['id'] = 0;
+ 		$id = 0;
+ 	} 
   }
 
    echo '<script>var hhid = "'.$id.'";</script>';
@@ -74,6 +75,7 @@
 <h3>Household <?php echo $id; ?> </h3>
 <form>
 	<input type="hidden" name="id" value="<?php echo $id; ?>">
+	<input type="hidden" name="sc" value="<?php echo $_GET[sc] ; ?>">
 	<button name="next" value="-1" class="btn btn-round btn-success" action="galery.php">Prev</button> 
 	<button name="next" value="0" class="btn btn-round btn-success" action="galery.php">Random</button> 
 	<button name="next" value="1" class="btn btn-round btn-success" action="galery.php">Next</button> 
@@ -95,6 +97,6 @@
   </div> <!-- col -->
  </div> <!-- row -->
 </div> <!-- cont -->
-<script type="text/javascript" src="meter.js"></script>
+<script type="text/javascript" src="../D3/HHactPower.js"></script>
 </body>
 </html>
