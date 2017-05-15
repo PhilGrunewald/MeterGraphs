@@ -10,6 +10,7 @@
   <title>METER - Energy-use.org</title>
   <link rel="stylesheet" type="text/css" href="../css/meter.css">
   <link rel="stylesheet" type="text/css" href="../css/bootstrap.min.css">
+  <link rel="shortcut icon" href="favicon.png" />
   <?php include('../libs/libs.php'); ?>
 </head>
 <body>
