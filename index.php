@@ -235,7 +235,44 @@ if (count($peakAppliances) < 1) {
 <span class="other_category colour-key"> Other </span> 
 </p>
 
-<div class="fb-share-button" data-href="http://www.energy-use.org/yourdata/" data-layout="button" data-size="large" data-mobile-iframe="true"><a class="fb-xfbml-parse-ignore" target="_blank" href="https://www.facebook.com/sharer/sharer.php?u=http%3A%2F%2Fwww.energy-use.org%2Fyourdata&amp;src=sdkpreparse">Share</a></div>
+</div>
+
+
+<div class="col-xs-12 col-sm-8 col-sm-offset-2 col-md-6 col-md-offset-3" style="background-color: transparent;">
+
+
+<script language="javascript">
+    function fbshareCurrentPage()
+    {window.open("https://www.facebook.com/sharer/sharer.php?u="+escape(window.location.href)+"&t="+document.title, '', 
+    'menubar=no,toolbar=no,resizable=yes,scrollbars=yes,height=300,width=600');
+    return false; }
+</script>
+<a href="javascript:fbshareCurrentPage()" target="_blank" alt="Share on Facebook">Facebook</a>
+
+
+
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+<a class="twitter-share-button"
+  href="https://twitter.com/intent/tweet?text=See%20my%20@EnergyUseUK%20electricity%20profile"
+    data-size="large">
+    Tweet</a>
+
+
+<a class="fb-share-button" 
+   data-href="http://www.energy-use.org/yourdata" 
+   data-layout="button"
+   data-size="large" >
+   Share
+</a>
+
+<div class="fb-like" 
+    data-href="https://www.facebook.com/EnergyUse" 
+    data-layout="standard" 
+    data-action="like" 
+    data-size="large"
+    data-show-faces="true">
+</div>
+
 
   <script type="text/javascript" src="../D3/HHactPower.js"></script>
 
