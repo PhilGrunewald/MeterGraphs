@@ -239,17 +239,10 @@ if (count($peakAppliances) < 1) {
 
 
 <div class="col-xs-12 col-sm-8 col-sm-offset-2 col-md-6 col-md-offset-3" style="background-color: transparent;">
-
-
-<script language="javascript">
-    function fbshareCurrentPage()
-    {window.open("https://www.facebook.com/sharer/sharer.php?u="+escape(window.location.href)+"&t="+document.title, '', 
-    'menubar=no,toolbar=no,resizable=yes,scrollbars=yes,height=300,width=600');
-    return false; }
-</script>
-<a href="javascript:fbshareCurrentPage()" target="_blank" alt="Share on Facebook">Facebook</a>
-
-
+<br>
+<a href="http://www.energy-use.org/gallery" class="btn btn-primary">
+See other people's profile
+</a>
 
 <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
 <a class="twitter-share-button"
@@ -264,6 +257,11 @@ if (count($peakAppliances) < 1) {
    data-size="large" >
    Share
 </a>
+<br>
+<a class="twitter-follow-button"
+  href="https://twitter.com/EnergyUseUK"
+  data-size="large">
+Follow @EnergyUseUK</a>
 
 <div class="fb-like" 
     data-href="https://www.facebook.com/EnergyUse" 
