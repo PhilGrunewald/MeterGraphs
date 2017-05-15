@@ -2,12 +2,28 @@
 <html lan="en">
 <head>
   <meta charset="utf-8">
+  <meta property="og:image"         content="http://www.energy-use.org/img/hh_graph.png" />
+  <meta property="og:url"           content="http://www.energy-use.org/yourdata/" />
+  <meta property="og:type"          content="website" />
+  <meta property="og:title"         content="I just got my electricity profile" />
+  <meta property="og:description"   content="Get yours. Take part in Oxford study at" />
   <title>METER - Energy-use.org</title>
   <link rel="stylesheet" type="text/css" href="../css/meter.css">
   <link rel="stylesheet" type="text/css" href="../css/bootstrap.min.css">
   <?php include('../libs/libs.php'); ?>
 </head>
 <body>
+ <div id="fb-root"></div>
+<script>
+(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_GB/sdk.js#xfbml=1&version=v2.9";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));
+</script> 
+
   <?php
     $id='7989';
     if(isset($_GET['id'])){ $id = $_GET['id']; }
@@ -218,6 +234,9 @@ if (count($peakAppliances) < 1) {
 <span class="work colour-key"> Work </span> 
 <span class="other_category colour-key"> Other </span> 
 </p>
+
+<div class="fb-share-button" data-href="http://www.energy-use.org/yourdata/" data-layout="button" data-size="large" data-mobile-iframe="true"><a class="fb-xfbml-parse-ignore" target="_blank" href="https://www.facebook.com/sharer/sharer.php?u=http%3A%2F%2Fwww.energy-use.org%2Fyourdata&amp;src=sdkpreparse">Share</a></div>
+
   <script type="text/javascript" src="../D3/HHactPower.js"></script>
 
   <!-- Modal for Users -->
