@@ -240,28 +240,30 @@ if (count($peakAppliances) < 1) {
 
 <div class="col-xs-12 col-sm-8 col-sm-offset-2 col-md-6 col-md-offset-3" style="background-color: transparent;">
 <br>
-<a href="http://www.energy-use.org/gallery" class="btn btn-primary">
-See other people's profile
-</a>
-
 <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
 <a class="twitter-share-button"
   href="https://twitter.com/intent/tweet?text=See%20my%20@EnergyUseUK%20electricity%20profile"
     data-size="large">
-    Tweet</a>
+    Tweet</a> <b>your profile</b>
 
+<br>
+<a href="http://www.energy-use.org/gallery" class="btn btn-primary">
+See other people's profile
+</a>
 
+<br>
+<a class="twitter-follow-button"
+  href="https://twitter.com/EnergyUseUK"
+  data-size="large">
+Follow @EnergyUseUK</a>
+
+<br>
 <a class="fb-share-button" 
    data-href="http://www.energy-use.org/yourdata" 
    data-layout="button"
    data-size="large" >
    Share
 </a>
-<br>
-<a class="twitter-follow-button"
-  href="https://twitter.com/EnergyUseUK"
-  data-size="large">
-Follow @EnergyUseUK</a>
 
 <div class="fb-like" 
     data-href="https://www.facebook.com/EnergyUse" 
