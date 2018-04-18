@@ -197,7 +197,7 @@ if (count($peakAppliances) < 1) {
   <option disabled>── Laundry ──</option>
   <option <?php if ($a1 == "Tumble dryer") {echo 'selected="selected"';} ?> value="Tumble dryer">Tumble dryer</option>
   <option <?php if ($a1 == "Washing machine") {echo 'selected="selected"';} ?> value="Washing machine">Washing machine</option>
-  <option <?php if ($a1 == "Washe-dryer") {echo 'selected="selected"';} ?>  value="Washe-dryer">Washe-dryer</option>
+  <option <?php if ($a1 == "Washer-dryer") {echo 'selected="selected"';} ?>  value="Washer-dryer">Washer-dryer</option>
   <option <?php if ($a1 == "Ironing") {echo 'selected="selected"';} ?>  value="Ironing">Ironing</option>
   <option disabled>── Kitchen ──</option>
   <option <?php if ($a1 == "Dishwasher") {echo 'selected="selected"';} ?> value="Dishwasher">Dishwasher</option>
