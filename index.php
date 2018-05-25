@@ -144,111 +144,118 @@
 
   <h3>Your electricity profile</h3>
   <p>Thank you for contributing your data to this study. Here is your load profile. </p>
-<p>
-  <div class="col-xs-12 col-sm-6 col-md-4 rounded-box">
-<h3>Minimum <?php echo $baseload; ?>W</h3>
-<p>Your lowest electricity use was on <?php echo $minday; ?> at <?php echo $mintime; ?>.
-<?php if ($baseload > $baseloadAll) {
-		echo " This is higher than the average (".$baseloadAll."W)";
-		if ($baseload < (1.4 * $baseloadAll)) {
-			echo ", but not by much, ";
-		} else {
-			echo ", ";
-		}
-	} else {
-		echo " This is lower than our average participant (".$baseloadAll."W), ";
-	}
-?>
-and mostly depends on stand-by devices and things that are always on (fridges, broadband routers...).</p>
-</div>
-  <div class="col-xs-12 col-sm-6 col-md-4 rounded-box">
-<h3>Average <?php echo $mean; ?>W</h3> compared to <?php echo $meanAll; ?>W across our participants.
-<?php if ($mean < 0.8*$meanAll) {echo " You are doing well.";}
- else if ($mean < 1.2*$meanAll) {echo " So your are quite typical.";}
- else {echo " Note that there is a lot of variation, depending on household size, type of appliances and activity levels (which is part of what we try to understand with this study).";}
-?>
-</div>
-
-
-  <div class="col-xs-12 col-sm-6 col-md-4 rounded-box">
-<h3>Max <?php echo $peak; ?>W</h3>
-<p>Your hour with the highest use started on <?php echo $peakday; ?> at <b> <?php echo $peaktime; ?></b>. 
-</p><p>
-
-<?php
-if (count($peakAppliances) < 1) {
-	echo "Do you remember which appliances might have been in use in that hour?";
-	$appLabel = "Can't remember";
-} else {
-	echo "You used: <b>";
-	foreach ($peakAppliances as $peakAppliance) {
-		echo "$peakAppliance - ";
-	}
-	echo "</b><br>Anything else perhaps?";
-	$appLabel = "Nothing else";
-} 
-?>
-</p>
-
-<form class="form-inline" role="form" action="<?php echo $_SERVER['PHP_SELF']; ?>" method="get">
-<input type="hidden" id="id" name="id" value="<?php echo $id; ?>">
-<select name="a1" id="a1" onchange="this.form.submit()">
-<option value="<?php echo $appLabel; ?>"><?php echo $appLabel; ?></option>
-  <option disabled>── Laundry ──</option>
-  <option <?php if ($a1 == "Tumble dryer") {echo 'selected="selected"';} ?> value="Tumble dryer">Tumble dryer</option>
-  <option <?php if ($a1 == "Washing machine") {echo 'selected="selected"';} ?> value="Washing machine">Washing machine</option>
-  <option <?php if ($a1 == "Washer-dryer") {echo 'selected="selected"';} ?>  value="Washer-dryer">Washer-dryer</option>
-  <option <?php if ($a1 == "Ironing") {echo 'selected="selected"';} ?>  value="Ironing">Ironing</option>
-  <option disabled>── Kitchen ──</option>
-  <option <?php if ($a1 == "Dishwasher") {echo 'selected="selected"';} ?> value="Dishwasher">Dishwasher</option>
-  <option <?php if ($a1 == "Oven") {echo 'selected="selected"';} ?>  value="Oven">Oven</option>
-  <option <?php if ($a1 == "Microwave") {echo 'selected="selected"';} ?> value="Microwave">Microwave</option>
-  <option <?php if ($a1 == "Kettle") {echo 'selected="selected"';} ?>  value="Kettle">Kettle</option>
-  <option <?php if ($a1 == "Toaster") {echo 'selected="selected"';} ?>  value="Toaster">Toaster</option>
-  <option disabled>── Entertainment  ──</option>
-  <option <?php if ($a1 == "TV") {echo 'selected="selected"';} ?>  value="TV">TV</option>
-  <option <?php if ($a1 == "Mobile device") {echo 'selected="selected"';} ?>  value="Mobile device">Mobile device</option>
-  <option <?php if ($a1 == "Games / Computer") {echo 'selected="selected"';} ?>  value="Games / Computer">Games / Computer</option>
-  <option <?php if ($a1 == "Music / Video") {echo 'selected="selected"';} ?>  value="Music / Video">Music / Video</option>
-  <option disabled>── Household ──</option>
-  <option <?php if ($a1 == "Vacuum cleaner") {echo 'selected="selected"';} ?>  value="Vacuum cleaner">Vacuum cleaner</option>
-  <option <?php if ($a1 == "Heater") {echo 'selected="selected"';} ?>  value="Heater">Heater</option>
-  <option <?php if ($a1 == "Tools") {echo 'selected="selected"';} ?>  value="Tools">Tools</option>
-  <option <?php if ($a1 == "EV") {echo 'selected="selected"';} ?> value="EV">Electric Vehicle</option>
-  <option disabled>── Other ──</option>
-  <option <?php if ($a1 == "Other") {echo 'selected="selected"';} ?>  value="Other">Other... [specify]</option>
-</select>
-<?php if ($a1 == "Other") {
-	echo '<input type="text" name="a2" placeholder="if not listed..."  onkeydown = "if (event.keyCode == 13) this.form.submit() ">';
-} 
-?>
-</form>
-<p>
-</div>
 
   <div id="canvas"></div>
   <div class='tooltip'></div>
+  
+  <p>Colours:
+  <span class="care_self colour-key"> Personal </span> 
+  <span class="food colour-key"> Food </span> 
+  <span class="work colour-key"> Work </span> 
+  <span class="other_category colour-key"> Other </span> 
+  </p>
 
-<p>Colours:
-<span class="care_self colour-key"> Personal </span> 
-<span class="food colour-key"> Food </span> 
-<span class="work colour-key"> Work </span> 
-<span class="other_category colour-key"> Other </span> 
-</p>
+  <h3>Some stats</h3>
+  <p>Please do not take these too seriously. A single day can vary a lot (which is why we collect many of them). Note also that some devices with low power factors (like motors) can result in higher readings. Treat these figures as an indicative comparisons.</p>
 
+  <div class="col-xs-12 col-sm-6 col-md-4 rounded-box">
+    <h3>Minimum <?php echo $baseload; ?>W</h3>
+    <p>Your lowest electricity use was on <?php echo $minday; ?> at <?php echo $mintime; ?>.
+    <?php if ($baseload > $baseloadAll) {
+    		echo " This is higher than the average (".$baseloadAll."W)";
+    		if ($baseload < (1.4 * $baseloadAll)) {
+    			echo ", but not by much, ";
+    		} else {
+    			echo ", ";
+    		}
+    	} else {
+    		echo " This is lower than our average participant (".$baseloadAll."W), ";
+    	}
+    ?>
+    and mostly depends on stand-by devices and things that are always on (fridges, broadband routers...).</p>
+  </div>
+  <div class="col-xs-12 col-sm-6 col-md-4 rounded-box">
+    <h3>Average <?php echo $mean; ?>W</h3> compared to <?php echo $meanAll; ?>W across our participants.
+    <?php if ($mean < 0.8*$meanAll) {echo " You are doing well.";}
+     else if ($mean < 1.2*$meanAll) {echo " So your are quite typical.";}
+     else {echo " Note that there is a lot of variation, depending on household size, type of appliances and activity levels (which is part of what we try to understand with this study).";}
+    ?>
+  </div>
+
+  <div class="col-xs-12 col-sm-6 col-md-4 rounded-box">
+    <h3>Max <?php echo $peak; ?>W</h3>
+    <p>Your hour with the highest use started on <?php echo $peakday; ?> at <b> <?php echo $peaktime; ?></b>. 
+    </p><p>
+    
+    <?php
+    if (count($peakAppliances) < 1) {
+    	echo "Do you remember which appliances might have been in use in that hour?";
+    	$appLabel = "Can't remember";
+    } else {
+    	echo "You used: <b>";
+    	foreach ($peakAppliances as $peakAppliance) {
+    		echo "$peakAppliance - ";
+    	}
+    	echo "</b><br>Anything else perhaps?";
+    	$appLabel = "Nothing else";
+    } 
+    ?>
+    </p>
+    
+    <form class="form-inline" role="form" action="<?php echo $_SERVER['PHP_SELF']; ?>" method="get">
+        <input type="hidden" id="id" name="id" value="<?php echo $id; ?>">
+        <select name="a1" id="a1" onchange="this.form.submit()">
+        <option value="<?php echo $appLabel; ?>"><?php echo $appLabel; ?></option>
+          <option disabled>── Laundry ──</option>
+          <option <?php if ($a1 == "Tumble dryer") {echo 'selected="selected"';} ?> value="Tumble dryer">Tumble dryer</option>
+          <option <?php if ($a1 == "Washing machine") {echo 'selected="selected"';} ?> value="Washing machine">Washing machine</option>
+          <option <?php if ($a1 == "Washer-dryer") {echo 'selected="selected"';} ?>  value="Washer-dryer">Washer-dryer</option>
+          <option <?php if ($a1 == "Ironing") {echo 'selected="selected"';} ?>  value="Ironing">Ironing</option>
+          <option disabled>── Kitchen ──</option>
+          <option <?php if ($a1 == "Dishwasher") {echo 'selected="selected"';} ?> value="Dishwasher">Dishwasher</option>
+          <option <?php if ($a1 == "Oven") {echo 'selected="selected"';} ?>  value="Oven">Oven</option>
+          <option <?php if ($a1 == "Microwave") {echo 'selected="selected"';} ?> value="Microwave">Microwave</option>
+          <option <?php if ($a1 == "Kettle") {echo 'selected="selected"';} ?>  value="Kettle">Kettle</option>
+          <option <?php if ($a1 == "Toaster") {echo 'selected="selected"';} ?>  value="Toaster">Toaster</option>
+          <option disabled>── Entertainment  ──</option>
+          <option <?php if ($a1 == "TV") {echo 'selected="selected"';} ?>  value="TV">TV</option>
+          <option <?php if ($a1 == "Mobile device") {echo 'selected="selected"';} ?>  value="Mobile device">Mobile device</option>
+          <option <?php if ($a1 == "Games / Computer") {echo 'selected="selected"';} ?>  value="Games / Computer">Games / Computer</option>
+          <option <?php if ($a1 == "Music / Video") {echo 'selected="selected"';} ?>  value="Music / Video">Music / Video</option>
+          <option disabled>── Household ──</option>
+          <option <?php if ($a1 == "Vacuum cleaner") {echo 'selected="selected"';} ?>  value="Vacuum cleaner">Vacuum cleaner</option>
+          <option <?php if ($a1 == "Heater") {echo 'selected="selected"';} ?>  value="Heater">Heater</option>
+          <option <?php if ($a1 == "Tools") {echo 'selected="selected"';} ?>  value="Tools">Tools</option>
+          <option <?php if ($a1 == "EV") {echo 'selected="selected"';} ?> value="EV">Electric Vehicle</option>
+          <option disabled>── Other ──</option>
+          <option <?php if ($a1 == "Other") {echo 'selected="selected"';} ?>  value="Other">Other... [specify]</option>
+        </select>
+        <?php if ($a1 == "Other") {
+        	echo '<input type="text" name="a2" placeholder="if not listed..."  onkeydown = "if (event.keyCode == 13) this.form.submit() ">';
+        } 
+        ?>
+    </form>
+  </div>
 </div>
+
+ <div class="row">
+  <div class="col-xs-12 col-sm-10 col-sm-offset-1 col-md-8 col-md-offset-2" style="background-color: transparent;">
+    <h3>See other people's profile</h3>
+    <p>Want to see how your profile compares with others? Here are <a href="http://www.energy-use.org/gallery/hh_profiles.php">some examples</a> </p>
+  </div>
+ </div>
 
 
 <div class="col-xs-12 col-sm-8 col-sm-offset-2 col-md-6 col-md-offset-3" style="background-color: transparent;">
 <br>
 <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
 <a class="twitter-share-button"
-  href="https://twitter.com/intent/tweet?text=See%20my%20@EnergyUseUK%20electricity%20profile"
+  href="https://twitter.com/intent/tweet?text=I%20took%20part%20in%20the%20Meter%20study%20@EnergyUseUK.%20See%20my%20electricity%20profile"
     data-size="large">
     Tweet</a> <b>your profile</b>
 
 <br>
-<a href="http://www.energy-use.org/gallery" class="btn btn-primary">
+<a href="http://www.energy-use.org/gallery/hh_profiles.php" class="btn">
 See other people's profile
 </a>
 
